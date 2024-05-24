@@ -4,47 +4,74 @@
  * SPDX-License-Identifier: CC0-1.0
  */
 
+#include <stdbool.h>
 #include <stdio.h>
-#include <inttypes.h>
-#include "sdkconfig.h"
+#include <stdlib.h>
+#include <string.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_chip_info.h"
-#include "esp_flash.h"
+#include "esp_freertos_hooks.h"
+#include "freertos/semphr.h"
+#include "esp_system.h"
+#include "driver/gpio.h"
 
+#include "../build/config/sdkconfig.h"
+#include "lvgl.h"
+#include "lvgl_helpers.h"
+#include "esp_timer.h"
+#include "esp_err.h"
+SemaphoreHandle_t xGuiSemaphore;
+static void lv_tick_task(void *arg)
+{
+    (void)arg;
+
+    lv_tick_inc(portTICK_PERIOD_MS);
+}
 void app_main(void)
 {
+    xGuiSemaphore = xSemaphoreCreateMutex();
     printf("Hello world!\n");
+    lv_init();
+    lvgl_driver_init();
+    lv_color_t *buf1 = heap_caps_malloc(DISP_BUF_SIZE * sizeof(lv_color_t), (1 << 3));
+    assert(buf1 != NULL);
+    memset(buf1, 0, DISP_BUF_SIZE * sizeof(lv_color_t));
+    lv_disp_buf_t disp_buf;
+    lv_disp_buf_init(&disp_buf, buf1, NULL, DISP_BUF_SIZE);
 
-    /* Print chip information */
-    esp_chip_info_t chip_info;
-    uint32_t flash_size;
-    esp_chip_info(&chip_info);
-    printf("This is %s chip with %d CPU core(s), %s%s%s%s, ",
-           CONFIG_IDF_TARGET,
-           chip_info.cores,
-           (chip_info.features & CHIP_FEATURE_WIFI_BGN) ? "WiFi/" : "",
-           (chip_info.features & CHIP_FEATURE_BT) ? "BT" : "",
-           (chip_info.features & CHIP_FEATURE_BLE) ? "BLE" : "",
-           (chip_info.features & CHIP_FEATURE_IEEE802154) ? ", 802.15.4 (Zigbee/Thread)" : "");
+    lv_disp_drv_t disp_drv;
+    lv_disp_drv_init(&disp_drv);
+    disp_drv.flush_cb = st7735s_flush;
+    disp_drv.buffer = &disp_buf;
+    lv_disp_drv_register(&disp_drv);
 
-    unsigned major_rev = chip_info.revision / 100;
-    unsigned minor_rev = chip_info.revision % 100;
-    printf("silicon revision v%d.%d, ", major_rev, minor_rev);
-    if(esp_flash_get_size(NULL, &flash_size) != ESP_OK) {
-        printf("Get flash size failed");
-        return;
+    lv_obj_t *scr = lv_disp_get_scr_act(NULL);
+    assert(scr != NULL);
+    lv_obj_t *label = lv_label_create(lv_scr_act(), NULL);
+    lv_label_set_text(label, "Hello World!");
+    lv_obj_align(label, NULL, LV_ALIGN_CENTER, 0, 0);
+    /* Create and start a periodic timer interrupt to call lv_tick_inc */
+    const esp_timer_create_args_t periodic_timer_args = {
+        .callback = &lv_tick_task,
+        .name = "periodic_gui"};
+    esp_timer_handle_t periodic_timer;
+    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, portTICK_PERIOD_MS * 1000));
+
+    while (1)
+    {
+        /* Delay 1 tick (assumes FreeRTOS tick is 10ms */
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        /* Try to take the semaphore, call lvgl related function on success */
+        if (pdTRUE == xSemaphoreTake(xGuiSemaphore, portMAX_DELAY))
+        {
+            lv_task_handler();
+            xSemaphoreGive(xGuiSemaphore);
+        }
     }
 
-    printf("%" PRIu32 "MB %s flash\n", flash_size / (uint32_t)(1024 * 1024),
-           (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
-
-    printf("Minimum free heap size: %" PRIu32 " bytes\n", esp_get_minimum_free_heap_size());
-
-    for (int i = 10; i >= 0; i--) {
-        printf("Restarting in %d seconds...\n", i);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
     printf("Restarting now.\n");
     fflush(stdout);
     esp_restart();

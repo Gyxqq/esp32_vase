@@ -12,6 +12,13 @@
         "esp_gatts_api.h": "c",
         "esp_gatt_defs.h": "c",
         "sdkconfig.h": "c",
-        "nvs_flash.h": "c"
+        "nvs_flash.h": "c",
+        "st7735s.h": "c",
+        "stdbool.h": "c",
+        "lvgl.h": "c",
+        "esp_flash.h": "c",
+        "esp_chip_info.h": "c",
+        "lvgl_helpers.h": "c",
+        "stdio.h": "c"
     }
 }
