@@ -1,0 +1,17 @@
+{
+    "C_Cpp.default.compilerPath": "",
+    "C_Cpp.default.includePath": [
+        "D:\\programfiles\\esp-idf\\components\\**",
+        "D:\\programfiles\\Espressif\\tools\\xtensa-esp32-elf\\esp-12.2.0_20230208\\xtensa-esp32-elf\\**"
+    ],
+    "files.associations": {
+        "esp_task_wdt.h": "c",
+        "esp_http_client.h": "c",
+        "ip_addr.h": "c",
+        "mqtt_client.h": "c",
+        "esp_gatts_api.h": "c",
+        "esp_gatt_defs.h": "c",
+        "sdkconfig.h": "c",
+        "nvs_flash.h": "c"
+    }
+}
