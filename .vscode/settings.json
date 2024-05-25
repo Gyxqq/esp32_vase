@@ -19,6 +19,7 @@
         "esp_flash.h": "c",
         "esp_chip_info.h": "c",
         "lvgl_helpers.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "esp_timer.h": "c"
     }
 }
