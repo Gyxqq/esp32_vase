@@ -20,6 +20,20 @@
         "esp_chip_info.h": "c",
         "lvgl_helpers.h": "c",
         "stdio.h": "c",
-        "esp_timer.h": "c"
+        "esp_timer.h": "c",
+        "semphr.h": "c",
+        "esp_system.h": "c",
+        "gpio.h": "c",
+        "lvgl_spi_conf.h": "c",
+        "qrcodegen.h": "c",
+        "lv_qrcode.h": "c",
+        "esp_idf_version.h": "c",
+        "esp_bit_defs.h": "c",
+        "esp_attr.h": "c",
+        "esp_bt.h": "c",
+        "*.tcc": "c",
+        "string": "c",
+        "string_view": "c",
+        "esp_wifi.h": "c"
     }
 }
