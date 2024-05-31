@@ -10,6 +10,7 @@ void init_wifi(void)
 
     nvs_flash_init();
     esp_err_t ret0 = nvs_flash_init();
+
     if (ret0 == ESP_ERR_NVS_NO_FREE_PAGES || ret0 == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
         // 如果NVS分区被占满，或者NVS库版本更高，需要执行全擦除
@@ -17,6 +18,48 @@ void init_wifi(void)
         ret0 = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret0);
+    nvs_handle nvs;
+    ret0=nvs_open("storage", NVS_READWRITE, &nvs);
+    if(ret0==ESP_OK){
+        printf("nvs open success\n");
+    }else{
+        printf("nvs open failed\n");
+    }
+    size_t len = 0;
+    ret0=nvs_get_str(nvs, "ssid", NULL, &len);
+    if(ret0==ESP_OK){
+        printf("ssid len: %d\n",len);
+    }else{
+        printf("ssid len failed\n");
+        return;
+    }
+    char *ssid0 = (char *)malloc(len);
+    ret0=nvs_get_str(nvs, "ssid", ssid0, &len);
+    if(ret0==ESP_OK){
+        printf("ssid: %s\n",ssid0);
+    }else{
+        printf("ssid failed\n");
+        return;
+    }
+    ret0=nvs_get_str(nvs, "password", NULL, &len);
+    if(ret0==ESP_OK){
+        printf("password len: %d\n",len);
+    }else{
+        printf("password len failed\n");
+        return;
+    }
+    char *password0 = (char *)malloc(len);
+    ret0=nvs_get_str(nvs, "password", password0, &len);
+    if(ret0==ESP_OK){
+        printf("password: %s\n",password0
+        );
+    }else{
+        printf("password failed\n");
+        return;
+    }
+    nvs_close(nvs);
+
+
     esp_netif_init();
     esp_event_loop_create_default();
     esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
@@ -38,8 +81,8 @@ void init_wifi(void)
 
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = "scugyx",
-            .password = "gyx200404",
+            .ssid ="",
+            .password = "",
             .threshold.authmode = WIFI_AUTH_WPA2_PSK,
             .pmf_cfg = {
                 .capable = true,
@@ -47,7 +90,11 @@ void init_wifi(void)
             },
         },
     };
+    strcpy((char *)wifi_config.sta.ssid, ssid0);
+    strcpy((char *)wifi_config.sta.password, password0);
+
     esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config);
+
     esp_err_t err0 = esp_wifi_start();
     if (err0 == ESP_OK)
     {

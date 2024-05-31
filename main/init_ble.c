@@ -152,12 +152,12 @@ void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts
         gatts_char_inst[0].property = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;
         gatts_char_inst[0].char_handle = 0;
         gatts_char_inst[0].control.auto_rsp = ESP_GATT_AUTO_RSP;
-        uint8_t char_value[] = "Hello World!";
-
+        uint8_t char_value[] = "Hello World!23452345";
         gatts_char_inst[0].value.attr_len = sizeof(char_value);
-        gatts_char_inst[0].value.attr_max_len = sizeof(char_value);
+        gatts_char_inst[0].value.attr_max_len = 100;
         gatts_char_inst[0].value.attr_value = char_value;
         ret = esp_ble_gatts_add_char(gl_profile_tab[PROFILE_APP_IDX].service_handle, &gatts_char_inst[0].char_uuid, gatts_char_inst[0].perm, gatts_char_inst[0].property, &gatts_char_inst[0].value, &gatts_char_inst[0].control);
+
         if (ret != ESP_OK)
         {
             printf("add char failed\n");
@@ -243,9 +243,49 @@ void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts
                     printf("char %d\n", i);
                     printf("char handle: %d\n", gatts_char_inst[i].char_handle);
                     printf("char uuid: %x\n", gatts_char_inst[i].char_uuid.uuid.uuid16);
+                     if(gatts_char_inst[i].char_uuid.uuid.uuid16==0xFF01){
+                        //将value 从空格分割成ssid和password
+                        char *ssid = strtok((char *)param->write.value, ",");
+                        char *password = strtok(NULL, ",");
+                        printf("ssid: %s\n", ssid);
+                        printf("password: %s\n", password);
+                        //将ssid和password写入nvs
+                        nvs_handle nvs;
+                        esp_err_t ret = nvs_open("storage", NVS_READWRITE, &nvs);
+                        if (ret == ESP_OK)
+                        {
+                            printf("nvs open success\n");
+                        }
+                        else
+                        {
+                            printf("nvs open failed\n");
+                        }
+                        ret = nvs_set_str(nvs, "ssid", ssid);
+                        if (ret == ESP_OK)
+                        {
+                            printf("ssid set success\n");
+                        }
+                        else
+                        {
+                            printf("ssid set failed\n");
+                        }
+                        ret = nvs_set_str(nvs, "password", password);
+                        if (ret == ESP_OK)
+                        {
+                            printf("password set success\n");
+                        }
+                        else
+                        {
+                            printf("password set failed\n");
+                        }
+                        nvs_close(nvs);
+                        esp_restart();
+                     }
+
                     break;
                 }
             }
+           
         }
         break;
     }

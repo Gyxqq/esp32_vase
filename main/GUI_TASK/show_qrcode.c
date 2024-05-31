@@ -11,9 +11,16 @@ static void lv_tick_task(void *arg)
 void guiTask(void *pvParameter)
 {
     (void)pvParameter;
+
+    UBaseType_t uxHighWaterMark;
+    /* Inspect our own high water mark on entering the task. */
+    uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+    printf("Watermark: %d\n", uxHighWaterMark);
+
     while (1)
     {
         // 延迟10ms
+
         vTaskDelay(pdMS_TO_TICKS(10));
 
         // 尝试获取信号量并调用lvgl相关函数
@@ -45,23 +52,8 @@ void initGuiTask()
 }
 void init_dsp()
 {
-    xGuiSemaphore = xSemaphoreCreateMutex();
-    lv_init();
-    lvgl_driver_init();
 
-    lv_color_t *buf1 = heap_caps_malloc(DISP_BUF_SIZE * sizeof(lv_color_t), (1 << 3));
-    assert(buf1 != NULL);
-    // memset(buf1, 0, DISP_BUF_SIZE * sizeof(lv_color_t));
-    lv_disp_buf_t disp_buf;
-    lv_disp_buf_init(&disp_buf, buf1, NULL, DISP_BUF_SIZE);
-
-    lv_disp_drv_t disp_drv;
-    lv_disp_drv_init(&disp_drv);
-    disp_drv.flush_cb = disp_driver_flush;
-    disp_drv.buffer = &disp_buf;
-    lv_disp_drv_register(&disp_drv);
-    initGuiTask();
-    printf("GUI Task has been created\n");
+    ;
 }
 void show_qrcode()
 {
@@ -82,8 +74,12 @@ void show_qrcode()
     lv_obj_del(label);
     printf("del label\n");
     QRCode *qrcode = heap_caps_malloc(sizeof(QRCode), (1 << 3));
-    uint8_t *qrcodeData = heap_caps_malloc(qrcode_getBufferSize(15), (1 << 3));
-    assert(qrcodeData != NULL);
+    uint8_t *qrcodeData = heap_caps_malloc(qrcode_getBufferSize(10), (1 << 3));
+    if (qrcode == NULL || qrcodeData == NULL)
+    {
+        printf("malloc failed\n");
+        return;
+    }
     // chipinfo获取mac地址
     printf("malloc qrcodeData\n");
     uint8_t mac[6];
@@ -93,13 +89,8 @@ void show_qrcode()
     // 生成二维码
     char macStr[22];
 
-    UBaseType_t uxHighWaterMark;
-    /* Inspect our own high water mark on entering the task. */
-    uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-    printf("Watermark: %d\n", uxHighWaterMark);
-
     sprintf(macStr, "MAC %02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    qrcode_initText(qrcode, qrcodeData, 15, ECC_HIGH, macStr);
+    qrcode_initText(qrcode, qrcodeData, 10, ECC_HIGH, macStr);
     // 按像素绘制二维码
     assert(qrcode != NULL);
     printf("size: %d\n", qrcode->size);
@@ -126,12 +117,15 @@ void show_qrcode()
     }
     // 释放二维码数据
     free(qrcodeData);
+
     // 设置画布
     // 设置画布位置
 
     lv_canvas_set_buffer(canvas, buf, qrcode->size, qrcode->size, LV_IMG_CF_TRUE_COLOR);
     lv_obj_align(canvas, NULL, LV_ALIGN_CENTER, 0, 20);
     // 释放缓冲区
+    free(buf);
+    free(qrcode);
     // 创建标签
     lv_obj_t *scan_qrcode_label = lv_label_create(scr, NULL);
     lv_label_set_text(scan_qrcode_label, "Scan QR Code\n connect to WiFi");

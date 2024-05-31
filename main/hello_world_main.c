@@ -34,13 +34,43 @@
 
 void app_main(void)
 {
+    xGuiSemaphore = xSemaphoreCreateMutex();
     printf("Hello world!\n");
     init_wifi();
-    init_ble();
-    init_dsp();
-    show_qrcode();
+    // init_ble();
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    lv_init();
+    lvgl_driver_init();
+    lv_color_t *buf1 = heap_caps_malloc(DISP_BUF_SIZE * sizeof(lv_color_t), (1 << 3));
+    assert(buf1 != NULL);
+    // memset(buf1, 0, DISP_BUF_SIZE * sizeof(lv_color_t));
+    lv_disp_buf_t disp_buf;
+    lv_disp_buf_init(&disp_buf, buf1, NULL, DISP_BUF_SIZE);
+    lv_disp_drv_t disp_drv;
+    lv_disp_drv_init(&disp_drv);
+    disp_drv.flush_cb = disp_driver_flush;
+    disp_drv.buffer = &disp_buf;
+    lv_disp_drv_register(&disp_drv);
+    // init_dsp();
+    initGuiTask();
+    printf("GUI Task has been created\n");
+
+    // show_qrcode();
     vTaskDelay(pdMS_TO_TICKS(5000));
-    deinit_ble();
+    //检查wifi连接状态
+    wifi_ap_record_t ap_info;
+    esp_err_t ret = esp_wifi_sta_get_ap_info(&ap_info);
+    if(ret!=ESP_OK){
+
+        printf("wifi not connected\n");
+        show_qrcode();
+        init_ble();
+    }
+
+  
+
+
     while (1)
     {
         // 获取当前剩余堆内存
