@@ -28,7 +28,7 @@
 #include "esp_chip_info.h"
 #include "init_wifi.c"
 
-#include "mqtt_client.h"
+#include "mqttcl.c"
 #include "init_ble.c"
 #include "GUI_TASK/show_qrcode.c"
 
@@ -58,19 +58,17 @@ void app_main(void)
 
     // show_qrcode();
     vTaskDelay(pdMS_TO_TICKS(5000));
-    //检查wifi连接状态
+    // 检查wifi连接状态
     wifi_ap_record_t ap_info;
     esp_err_t ret = esp_wifi_sta_get_ap_info(&ap_info);
-    if(ret!=ESP_OK){
+    if (ret != ESP_OK)
+    {
 
         printf("wifi not connected\n");
         show_qrcode();
         init_ble();
     }
-
-  
-
-
+    init_mqtt();
     while (1)
     {
         // 获取当前剩余堆内存

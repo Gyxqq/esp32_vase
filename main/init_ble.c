@@ -12,7 +12,6 @@
 #define GATTS_SERVICE_UUID 0x00FF
 #define GATTS_CHAR_NUM 1
 
-
 void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
     switch (event)
@@ -243,13 +242,16 @@ void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts
                     printf("char %d\n", i);
                     printf("char handle: %d\n", gatts_char_inst[i].char_handle);
                     printf("char uuid: %x\n", gatts_char_inst[i].char_uuid.uuid.uuid16);
-                     if(gatts_char_inst[i].char_uuid.uuid.uuid16==0xFF01){
-                        //将value 从空格分割成ssid和password
+                    if (gatts_char_inst[i].char_uuid.uuid.uuid16 == 0xFF01)
+                    {
+                        // 将value 从空格分割成ssid和password
                         char *ssid = strtok((char *)param->write.value, ",");
                         char *password = strtok(NULL, ",");
+                        char *uuid = strtok(NULL, ",");
                         printf("ssid: %s\n", ssid);
                         printf("password: %s\n", password);
-                        //将ssid和password写入nvs
+
+                        // 将ssid和password写入nvs
                         nvs_handle nvs;
                         esp_err_t ret = nvs_open("storage", NVS_READWRITE, &nvs);
                         if (ret == ESP_OK)
@@ -278,14 +280,29 @@ void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts
                         {
                             printf("password set failed\n");
                         }
+                        if (uuid != NULL)
+                        {
+                            ret = nvs_set_str(nvs, "uuid", uuid);
+                            if (ret == ESP_OK)
+                            {
+                                printf("uuid set success\n");
+                            }
+                            else
+                            {
+                                printf("uuid set failed\n");
+                            }
+                        }
+                        else
+                        {
+                            printf("uuid is null\n");
+                        }
                         nvs_close(nvs);
                         esp_restart();
-                     }
+                    }
 
                     break;
                 }
             }
-           
         }
         break;
     }
@@ -294,8 +311,9 @@ void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts
         break;
     }
 }
-void init_ble(){
-        esp_err_t ret;
+void init_ble()
+{
+    esp_err_t ret;
     // config
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     bt_cfg.mode = ESP_BT_MODE_BLE;
@@ -324,8 +342,6 @@ void init_ble(){
     // 开启广播
     esp_ble_gap_start_advertising(&adv_params);
 
-    
-
     ret = esp_ble_gatts_register_callback(gatts_profile_event_handler);
     if (ret != ESP_OK)
     {
@@ -339,8 +355,9 @@ void init_ble(){
         printf("Error: %s\n", esp_err_to_name(ret));
     }
 }
-void deinit_ble(){
-    
+void deinit_ble()
+{
+
     esp_bluedroid_disable();
     esp_bluedroid_deinit();
     esp_bt_controller_disable();
