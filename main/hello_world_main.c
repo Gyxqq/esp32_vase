@@ -69,6 +69,8 @@ void app_main(void)
         init_ble();
     }
     init_mqtt();
+   
+
     while (1)
     {
         // 获取当前剩余堆内存
