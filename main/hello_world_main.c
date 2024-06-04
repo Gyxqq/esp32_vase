@@ -31,7 +31,7 @@
 #include "mqttcl.c"
 #include "init_ble.c"
 #include "GUI_TASK/show_qrcode.c"
-
+#include "esp_sleep.h"
 void app_main(void)
 {
     xGuiSemaphore = xSemaphoreCreateMutex();
