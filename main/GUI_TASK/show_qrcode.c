@@ -1,3 +1,4 @@
+
 #include "lvgl_helpers.h"
 #include "../QRCode/qrcode.c"
 #include "esp_wifi.h"
