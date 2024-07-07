@@ -27,7 +27,7 @@
 
 #include "esp_chip_info.h"
 #include "init_wifi.c"
-
+#include "sensor.c"
 #include "mqttcl.c"
 #include "init_ble.c"
 #include "GUI_TASK/show_qrcode.c"
@@ -65,11 +65,11 @@ void app_main(void)
     {
 
         printf("wifi not connected\n");
-        show_qrcode();
+       show_qrcode();
         init_ble();
     }
     init_mqtt();
-   
+    init_i2c();
 
     while (1)
     {
@@ -81,6 +81,7 @@ void app_main(void)
         printf("Free heap size: %d, Minimum free heap size: %d\n", freeHeapSize, minEverFreeHeapSize);
         // 延迟5秒钟
         vTaskDelay(pdMS_TO_TICKS(5000));
+        read_sensor();
     }
     printf("Restarting now.\n");
     fflush(stdout);

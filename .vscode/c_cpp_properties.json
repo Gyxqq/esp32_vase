@@ -5,7 +5,7 @@
             "includePath": [
                 "${default}",
                 "${workspaceFolder}/**",
-                "root/software/esp-idf-v5.2.1/components/**"
+                "D:\\programfiles\\Espressif\\frameworks\\esp-idf-v5.2.2\\components\\**"
             ],
             "defines": [
                 "_DEBUG",
@@ -21,10 +21,9 @@
         {
             "name": "esp",
             "includePath": [
-                "${default}",
-                "${workspaceFolder}/**",
-                "/root/software/esp-idf-v5.2.1/components/**"
-
+                "D:/programfiles/Espressif/tools/xtensa-esp32-elf/esp-12.2.0_20230208/xtensa-esp32-elf\\**",
+                "f:/projects/esp32_vase/**",
+                "D:/programfiles/Espressif/frameworks/esp-idf-v5.2.2/components/**"
             ],
             "defines": [
                 "_DEBUG",
@@ -34,7 +33,19 @@
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "linux-gcc-arm",
-            "compilerPath": "/root/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/bin/xtensa-esp32-elf-g++"
+            "compilerPath": "D:\\programfiles\\Espressif\\tools\\xtensa-esp-elf\\esp-13.2.0_20230928\\xtensa-esp-elf\\bin\\xtensa-esp32-elf-g++.exe",
+            "compilerPathInCppPropertiesJson": "D:\\programfiles\\Espressif\\tools\\xtensa-esp-elf\\esp-13.2.0_20230928\\xtensa-esp-elf\\bin\\xtensa-esp32-elf-g++.exe",
+            "mergeConfigurations": false,
+            "browse": {
+                "path": [
+                    "D:/programfiles/esp-idf/components\\**",
+                    "D:/programfiles/Espressif/tools/xtensa-esp32-elf/esp-12.2.0_20230208/xtensa-esp32-elf\\**",
+                    "f:/projects/esp32_vase/**",
+                    "D:/programfiles/Espressif/frameworks/esp-idf-v5.2.2/components\\**",
+                    "f:/projects/esp32_vase"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
         }
     ],
     "version": 4

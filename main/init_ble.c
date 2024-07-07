@@ -6,11 +6,11 @@
 #include "esp_gatts_api.h"
 #include "esp_gatt_common_api.h"
 #include "esp_bt_defs.h"
-
+#include "nvs.h"
 #define PROFILE_NUM 1
 #define PROFILE_APP_IDX 0
 #define GATTS_SERVICE_UUID 0x00FF
-#define GATTS_CHAR_NUM 1
+#define GATTS_CHAR_NUM 2
 
 void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
@@ -107,7 +107,8 @@ void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts
         gl_profile_tab[PROFILE_APP_IDX].service_id.id.uuid.uuid.uuid128[14] = 0xCD;
         gl_profile_tab[PROFILE_APP_IDX].service_id.id.uuid.uuid.uuid128[15] = 0xEF;
 
-        esp_err_t ret = esp_ble_gatts_create_service(gatts_if, &gl_profile_tab[PROFILE_APP_IDX].service_id, 4);
+        esp_err_t ret = esp_ble_gatts_create_service(gatts_if, &gl_profile_tab[PROFILE_APP_IDX].service_id, 6);
+
         if (ret != ESP_OK)
         {
             printf("create service failed\n");
@@ -156,7 +157,27 @@ void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts
         gatts_char_inst[0].value.attr_max_len = 100;
         gatts_char_inst[0].value.attr_value = char_value;
         ret = esp_ble_gatts_add_char(gl_profile_tab[PROFILE_APP_IDX].service_handle, &gatts_char_inst[0].char_uuid, gatts_char_inst[0].perm, gatts_char_inst[0].property, &gatts_char_inst[0].value, &gatts_char_inst[0].control);
-
+        if (ret != ESP_OK)
+        {
+            printf("add char failed\n");
+            printf("Error: %d\n", ret);
+            printf("Error: %s\n", esp_err_to_name(ret));
+        }
+        else
+        {
+            printf("add char success\n");
+        }
+        gatts_char_inst[1].char_uuid.len = ESP_UUID_LEN_16;
+        gatts_char_inst[1].char_uuid.uuid.uuid16 = 0xFF02;
+        gatts_char_inst[1].perm = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE;
+        gatts_char_inst[1].property = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;
+        gatts_char_inst[1].char_handle = 1;
+        gatts_char_inst[1].control.auto_rsp = ESP_GATT_AUTO_RSP;
+        uint8_t char_value_1[] = "Hello World!23452345";
+        gatts_char_inst[1].value.attr_len = sizeof(char_value_1);
+        gatts_char_inst[1].value.attr_max_len = 100;
+        gatts_char_inst[1].value.attr_value = char_value_1;
+        ret = esp_ble_gatts_add_char(gl_profile_tab[PROFILE_APP_IDX].service_handle, &gatts_char_inst[1].char_uuid, gatts_char_inst[1].perm, gatts_char_inst[1].property, &gatts_char_inst[1].value, &gatts_char_inst[1].control);
         if (ret != ESP_OK)
         {
             printf("add char failed\n");
@@ -189,13 +210,13 @@ void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts
         esp_err_t err0 = param->add_char.status;
         if (err0 != ESP_OK)
         {
-            printf("add char failed\n");
+            printf("add char failed1\n");
             printf("Error: %d\n", err0);
             printf("Error: %s\n", esp_err_to_name(err0));
         }
         else
         {
-            printf("add char success\n");
+            printf("add char success1\n");
         }
         int num = 0;
         for (int i = 0; i < GATTS_CHAR_NUM; i++)
@@ -298,6 +319,36 @@ void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts
                         }
                         nvs_close(nvs);
                         esp_restart();
+                    }
+                    if(gatts_char_inst[i].char_uuid.uuid.uuid16 == 0xFF02)
+                    {
+                        printf("char %d\n", i);
+                        printf("char handle: %d\n", gatts_char_inst[i].char_handle);
+                        printf("char uuid: %x\n", gatts_char_inst[i].char_uuid.uuid.uuid16);
+                        printf("value: %s\n", param->write.value);
+                        char *uuid =(char *)param->write.value;
+                        printf("uuid: %s\n", uuid);
+                        nvs_handle nvs;
+                        esp_err_t ret = nvs_open("storage", NVS_READWRITE, &nvs);
+                        if (ret == ESP_OK)
+                        {
+                            printf("nvs open success\n");
+                        }
+                        else
+                        {
+                            printf("nvs open failed\n");
+                        }
+                        ret = nvs_set_str(nvs, "uuid", uuid);
+                        if (ret == ESP_OK)
+                        {
+                            printf("uuid set success\n");
+                        }
+                        else
+                        {
+                            printf("uuid set failed\n");
+                        }
+                        nvs_close(nvs);
+                        // esp_restart();
                     }
 
                     break;

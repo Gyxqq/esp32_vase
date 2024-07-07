@@ -35,7 +35,9 @@
         "string": "c",
         "string_view": "c",
         "esp_wifi.h": "c",
-        "gpio_sig_map.h": "c"
+        "gpio_sig_map.h": "c",
+        "i2c_types.h": "c",
+        "i2c_master.h": "c"
     },
     "cmake.configureOnOpen": true
 }
