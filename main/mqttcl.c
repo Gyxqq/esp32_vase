@@ -4,7 +4,7 @@
 #include "static_value.c"
 #include "init_wifi.c"
 #include <nvs.h>
-#define TAG "MQTT"
+// #define TAG "MQTT"
 
 void base_mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
