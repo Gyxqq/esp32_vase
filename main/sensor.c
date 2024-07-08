@@ -38,7 +38,10 @@ int init_i2c()
 int read_sensor()
 {
     uint8_t data[8] = {0x70, 0xac, 0x33, 0x00};
-    
+    i2c_master_transmit(bus_handle, data, 4, 1000);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    data[0]=0x71;
+    i2c_master_transmit_receive(bus_handle, data, 1,data, 7, 1000);
 
         for (int i = 0; i < 7; i++)
     {

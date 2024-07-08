@@ -37,7 +37,11 @@
         "esp_wifi.h": "c",
         "gpio_sig_map.h": "c",
         "i2c_types.h": "c",
-        "i2c_master.h": "c"
+        "i2c_master.h": "c",
+        "lcd_types.h": "c",
+        "spi_master.h": "c",
+        "esp_lcd_panel_vendor.h": "c",
+        "esp_lcd_panel_io.h": "c"
     },
     "cmake.configureOnOpen": true
 }
