@@ -34,6 +34,8 @@
 #include "esp_sleep.h"
 void app_main(void)
 {
+    init_i2c();
+
     xGuiSemaphore = xSemaphoreCreateMutex();
     printf("Hello world!\n");
     init_wifi();
@@ -65,11 +67,10 @@ void app_main(void)
     {
 
         printf("wifi not connected\n");
-       show_qrcode();
+        show_qrcode();
         init_ble();
     }
     init_mqtt();
-    init_i2c();
 
     while (1)
     {

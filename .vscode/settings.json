@@ -37,7 +37,11 @@
         "esp_wifi.h": "c",
         "gpio_sig_map.h": "c",
         "i2c_types.h": "c",
-        "i2c_master.h": "c"
+        "i2c_master.h": "c",
+        "touch_driver.h": "c",
+        "xpt2046.h": "c",
+        "disp_driver.h": "c",
+        "disp_spi.h": "c"
     },
     "cmake.configureOnOpen": true
 }

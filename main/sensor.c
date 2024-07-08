@@ -2,8 +2,6 @@
 #define SENSOR_C
 
 #include "driver/i2c_master.h"
-
-// #include <test_board.h>
 #include "freertos/task.h"
 #include "freertos/FreeRTOS.h"
 #define I2C_SCL_IO 18
