@@ -71,9 +71,14 @@ void app_main(void)
         printf("wifi not connected\n");
         show_qrcode();
         init_ble();
+        while (true)
+        {
+            vTaskDelay(pdMS_TO_TICKS(1000));
+        }
     }
     init_mqtt();
     load_uuid();
+    screen_manager(SENSOR_SCREEN, 0);
     int_fast64_t counter = 0;
     while (1) // 存放一些定时任务
     {
@@ -86,7 +91,7 @@ void app_main(void)
             printf("Free heap size: %d, Minimum free heap size: %d\n", freeHeapSize, minEverFreeHeapSize);
             // 延迟5秒钟
         }
-        if (counter % 1800 == 0)
+        if (counter % 5 == 0)
         {
             read_temp_humi_uploader();
         }
@@ -114,6 +119,7 @@ int read_temp_humi_uploader()
     sprintf(payload, "{\n\"msg\": \"SUCCESS\",\n\"plant_id\": \"%s\",\n\"temperature\": %.2f,\n\"humidity\": %.2f,\n\"luminance\": 50\n}", uuid, data.temp, data.hum);
     esp_mqtt_client_publish(client, topic, payload, 0, 0, 0);
     free(payload);
+    screen_sensor_update(data.temp, data.hum);
     return 0;
 }
 

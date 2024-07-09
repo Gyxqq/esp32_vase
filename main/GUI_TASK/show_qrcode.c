@@ -1,11 +1,21 @@
-
+#ifndef GUI_TASK_C
+#define GUI_TASK_C
 #include "lvgl_helpers.h"
 #include "../QRCode/qrcode.c"
 #include "esp_wifi.h"
+#include "../static_value.c"
 SemaphoreHandle_t xGuiSemaphore;
-struct screen_sensor{
-lv_obj_t* sensor_screen;
-};
+int screen_manager(int screen_index, int opt);
+int screen_sensor_init();
+int screen_sensor_update(float temp, float humi);
+int screen_sensor_destroy();
+struct screen_sensor
+{
+    lv_obj_t *sensor_screen;
+    lv_obj_t *temp_label;
+    lv_obj_t *humi_label;
+    lv_obj_t *wifi_label;
+} screen_sensor;
 static void lv_tick_task(void *arg)
 {
     lv_tick_inc(portTICK_PERIOD_MS);
@@ -59,6 +69,7 @@ void init_dsp()
 
     ;
 }
+
 void show_qrcode()
 {
 
@@ -134,10 +145,68 @@ void show_qrcode()
     lv_obj_t *scan_qrcode_label = lv_label_create(scr, NULL);
     lv_label_set_text(scan_qrcode_label, "    Scan QR Code\n  connect to WiFi");
     lv_obj_align(scan_qrcode_label, canvas, LV_ALIGN_IN_TOP_MID, -25, -35);
-    //设置字体大小
+    // 设置字体大小
     lv_obj_set_style_local_text_font(scan_qrcode_label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_title());
     lv_obj_t *ble_icon = lv_label_create(scr, NULL);
     lv_label_set_text(ble_icon, LV_SYMBOL_BLUETOOTH);
-    //放右上角
+    // 放右上角
     lv_obj_align(ble_icon, NULL, LV_ALIGN_IN_TOP_RIGHT, -5, 5);
 }
+int screen_manager(int screen_index, int opt) // 0: init 1:destroy
+{
+
+    if (screen_index == SENSOR_SCREEN)
+    {
+        if (opt == 0)
+        {   printf("sensor screen\n");
+            lv_obj_t *scr = lv_disp_get_scr_act(NULL);
+            if (scr != NULL)
+            {   printf("del scr\n");
+                lv_obj_del(scr);
+            }
+            screen_sensor.sensor_screen = lv_obj_create(NULL, NULL);
+            lv_disp_load_scr(screen_sensor.sensor_screen);
+            assert(screen_sensor.sensor_screen != NULL);
+            return screen_sensor_init();
+        }
+        else if (opt == 1)
+        {
+            return screen_sensor_destroy();
+        }
+    }
+    return -1;
+}
+
+int screen_sensor_init()
+{
+
+    screen_sensor.temp_label = lv_label_create(screen_sensor.sensor_screen, NULL);
+    screen_sensor.humi_label = lv_label_create(screen_sensor.sensor_screen, NULL);
+    screen_sensor.wifi_label = lv_label_create(screen_sensor.sensor_screen, NULL);
+    lv_obj_set_style_local_text_font(screen_sensor.temp_label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_title());
+    lv_obj_set_style_local_text_font(screen_sensor.humi_label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_title());
+    lv_obj_align(screen_sensor.temp_label, screen_sensor.sensor_screen, LV_ALIGN_CENTER, -30, -30);
+    lv_obj_align(screen_sensor.humi_label, screen_sensor.sensor_screen, LV_ALIGN_CENTER, -30, 0);
+    lv_obj_align(screen_sensor.wifi_label, screen_sensor.sensor_screen, LV_ALIGN_OUT_TOP_RIGHT, -10,15);
+    lv_label_set_text(screen_sensor.temp_label, "Temp: 0.0");
+    lv_label_set_text(screen_sensor.humi_label, "Humi: 0.0");
+    lv_label_set_text(screen_sensor.wifi_label, LV_SYMBOL_WIFI);
+    return 0;
+}
+int screen_sensor_destroy()
+{
+    lv_obj_del(screen_sensor.sensor_screen);
+    return 0;
+}
+int screen_sensor_update(float temp, float humi)
+{
+    char temp_str[20];
+    char humi_str[20];
+    snprintf(temp_str, sizeof(temp_str), "Temp: %.2f", temp);
+    snprintf(humi_str, sizeof(humi_str), "Humi: %.2f", humi);
+    lv_label_set_text(screen_sensor.temp_label, temp_str);
+    lv_label_set_text(screen_sensor.humi_label, humi_str);
+    return 0;
+}
+
+#endif

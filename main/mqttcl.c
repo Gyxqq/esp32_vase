@@ -15,7 +15,7 @@ void base_mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t 
     {
     case MQTT_EVENT_CONNECTED:
         printf("MQTT_EVENT_CONNECTED\n");
-        esp_mqtt_client_subscribe(client, "test", 0);
+        esp_mqtt_client_subscribe(client, "send-command", 1);
         break;
     case MQTT_EVENT_DISCONNECTED:
 
