@@ -32,10 +32,12 @@
 #include "init_ble.c"
 #include "GUI_TASK/show_qrcode.c"
 #include "esp_sleep.h"
+int load_uuid();
+int read_temp_humi_uploader();
 void app_main(void)
 {
-    init_i2c();
 
+    init_i2c();
     xGuiSemaphore = xSemaphoreCreateMutex();
     printf("Hello world!\n");
     init_wifi();
@@ -71,21 +73,93 @@ void app_main(void)
         init_ble();
     }
     init_mqtt();
-
-    while (1)
+    load_uuid();
+    int_fast64_t counter = 0;
+    while (1) // 存放一些定时任务
     {
-        // 获取当前剩余堆内存
-        size_t freeHeapSize = xPortGetFreeHeapSize();
-        // 获取自系统启动以来最小的剩余堆内存
-        size_t minEverFreeHeapSize = xPortGetMinimumEverFreeHeapSize();
-        // 打印内存信息
-        printf("Free heap size: %d, Minimum free heap size: %d\n", freeHeapSize, minEverFreeHeapSize);
-        // 延迟5秒钟
-        vTaskDelay(pdMS_TO_TICKS(5000));
-        // read_sensor();
+        if (counter % 5 == 0)
+        { // 获取当前剩余堆内存
+            size_t freeHeapSize = xPortGetFreeHeapSize();
+            // 获取自系统启动以来最小的剩余堆内存
+            size_t minEverFreeHeapSize = xPortGetMinimumEverFreeHeapSize();
+            // 打印内存信息
+            printf("Free heap size: %d, Minimum free heap size: %d\n", freeHeapSize, minEverFreeHeapSize);
+            // 延迟5秒钟
+        }
+        if (counter % 1800 == 0)
+        {
+            read_temp_humi_uploader();
+        }
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        counter++;
+        if (counter == 0xffffffff)
+        {
+            counter = 0;
+        }
     }
     printf("Restarting now.\n");
     fflush(stdout);
-
     esp_restart();
+}
+int read_temp_humi_uploader()
+{
+    struct temp_hum_data data = read_sensor();
+    if (data.temp == -1)
+    {
+        printf("read sensor failed\n");
+        return -1;
+    }
+    char *topic = "get-history";
+    char *payload = malloc(200);
+    sprintf(payload, "{\n\"msg\": \"SUCCESS\",\n\"plant_id\": \"%s\",\n\"temperature\": %.2f,\n\"humidity\": %.2f,\n\"luminance\": 50\n}", uuid, data.temp, data.hum);
+    esp_mqtt_client_publish(client, topic, payload, 0, 0, 0);
+    free(payload);
+    return 0;
+}
+
+int load_uuid()
+{
+    nvs_flash_init();
+    esp_err_t ret0 = nvs_flash_init();
+
+    if (ret0 == ESP_ERR_NVS_NO_FREE_PAGES || ret0 == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    {
+        // 如果NVS分区被占满，或者NVS库版本更高，需要执行全擦除
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret0 = nvs_flash_init();
+    }
+    nvs_handle nvs;
+    ret0 = nvs_open("storage", NVS_READWRITE, &nvs);
+    if (ret0 == ESP_OK)
+    {
+        printf("nvs open success\n");
+    }
+    else
+    {
+        printf("nvs open failed\n");
+    }
+    size_t len = 0;
+    ret0 = nvs_get_str(nvs, "uuid", NULL, &len);
+    if (ret0 == ESP_OK)
+    {
+        printf("uuid len: %d\n", len);
+    }
+    else
+    {
+        printf("uuid len failed\n");
+        return -1;
+    }
+    uuid = (char *)malloc(len);
+    ret0 = nvs_get_str(nvs, "uuid", uuid, &len);
+    if (ret0 == ESP_OK)
+    {
+        printf("uuid: %s\n", uuid);
+    }
+    else
+    {
+        printf("uuid init failed\n");
+        return -1;
+    }
+    nvs_close(nvs);
+    return 0;
 }

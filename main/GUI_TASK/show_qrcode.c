@@ -3,6 +3,9 @@
 #include "../QRCode/qrcode.c"
 #include "esp_wifi.h"
 SemaphoreHandle_t xGuiSemaphore;
+struct screen_sensor{
+lv_obj_t* sensor_screen;
+};
 static void lv_tick_task(void *arg)
 {
     lv_tick_inc(portTICK_PERIOD_MS);
@@ -129,6 +132,12 @@ void show_qrcode()
     free(qrcode);
     // 创建标签
     lv_obj_t *scan_qrcode_label = lv_label_create(scr, NULL);
-    lv_label_set_text(scan_qrcode_label, "Scan QR Code\n connect to WiFi");
-    lv_obj_align(scan_qrcode_label, canvas, LV_ALIGN_IN_TOP_MID, 0, -35);
+    lv_label_set_text(scan_qrcode_label, "    Scan QR Code\n  connect to WiFi");
+    lv_obj_align(scan_qrcode_label, canvas, LV_ALIGN_IN_TOP_MID, -25, -35);
+    //设置字体大小
+    lv_obj_set_style_local_text_font(scan_qrcode_label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_title());
+    lv_obj_t *ble_icon = lv_label_create(scr, NULL);
+    lv_label_set_text(ble_icon, LV_SYMBOL_BLUETOOTH);
+    //放右上角
+    lv_obj_align(ble_icon, NULL, LV_ALIGN_IN_TOP_RIGHT, -5, 5);
 }

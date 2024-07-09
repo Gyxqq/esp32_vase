@@ -41,7 +41,8 @@
         "touch_driver.h": "c",
         "xpt2046.h": "c",
         "disp_driver.h": "c",
-        "disp_spi.h": "c"
+        "disp_spi.h": "c",
+        "hx8357.h": "c"
     },
     "cmake.configureOnOpen": true
 }
