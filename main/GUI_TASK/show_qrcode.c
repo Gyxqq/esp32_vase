@@ -8,6 +8,8 @@ int screen_manager(int screen_index, int opt);
 int screen_sensor_init();
 int screen_sensor_update(float temp, float humi);
 int screen_sensor_destroy();
+int screen_weather_init();
+int screen_weather_destroy();
 struct screen_sensor
 {
     lv_obj_t *sensor_screen;
@@ -15,6 +17,10 @@ struct screen_sensor
     lv_obj_t *humi_label;
     lv_obj_t *wifi_label;
 } screen_sensor;
+struct screen_weather
+{
+    lv_obj_t *weather_screen;
+} weather;
 static void lv_tick_task(void *arg)
 {
     lv_tick_inc(portTICK_PERIOD_MS);
@@ -50,7 +56,7 @@ void initGuiTask()
 {
     // 创建信号量
     // 尝试获取信号量并调用lvgl相关函数
-    if (pdTRUE == xSemaphoreTake(xGuiSemaphore,pdMS_TO_TICKS(1000)))
+    if (pdTRUE == xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(1000)))
     {
 
         // 定义定时器参数
@@ -156,7 +162,7 @@ void show_qrcode()
     // 放右上角
     lv_obj_align(ble_icon, NULL, LV_ALIGN_IN_TOP_RIGHT, -5, 5);
 }
-int screen_manager(int screen_index, int opt) // 0: init 1:destroy
+int screen_manager(int screen_index, int opt) // 0: init 1:toggle 2:destroy
 {
 
     if (screen_index == SENSOR_SCREEN)
@@ -168,22 +174,50 @@ int screen_manager(int screen_index, int opt) // 0: init 1:destroy
             if (opt == 0)
             {
                 printf("sensor screen\n");
-                lv_obj_t *scr = lv_disp_get_scr_act(NULL);
-                if (scr != NULL)
-                {
-                    printf("del scr\n");
-                    lv_obj_del(scr);
-                }
                 screen_sensor.sensor_screen = lv_obj_create(NULL, NULL);
-                lv_disp_load_scr(screen_sensor.sensor_screen);
+                lv_scr_load(screen_sensor.sensor_screen);
                 assert(screen_sensor.sensor_screen != NULL);
                 xSemaphoreGive(xGuiSemaphore);
                 return screen_sensor_init();
             }
             else if (opt == 1)
             {
+
+                lv_scr_load(screen_sensor.sensor_screen);
+                xSemaphoreGive(xGuiSemaphore);
+                return 1;
+            }
+            else if (opt == 2)
+            {
                 xSemaphoreGive(xGuiSemaphore);
                 return screen_sensor_destroy();
+            }
+            xSemaphoreGive(xGuiSemaphore);
+        }
+    }
+    else if (screen_index == WEAHTER_SCREEN)
+    {
+        if (pdTRUE == xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(1)))
+        {
+            if (opt == 0)
+            {
+                weather.weather_screen = lv_obj_create(NULL, NULL);
+                lv_scr_load(weather.weather_screen);
+                assert(weather.weather_screen != NULL);
+                xSemaphoreGive(xGuiSemaphore);
+                return screen_weather_init();
+            }
+            else if (opt == 1)
+            {
+                assert(weather.weather_screen != NULL);
+                lv_scr_load(weather.weather_screen);
+                xSemaphoreGive(xGuiSemaphore);
+                return 1;
+            }
+            else if (opt == 2)
+            {
+                xSemaphoreGive(xGuiSemaphore);
+                return screen_weather_destroy();
             }
             xSemaphoreGive(xGuiSemaphore);
         }
@@ -206,7 +240,7 @@ int screen_sensor_init()
     }
 
     vTaskDelay(2000 / portTICK_PERIOD_MS);
-    if (pdTRUE == xSemaphoreTake(xGuiSemaphore,pdMS_TO_TICKS(1)))
+    if (pdTRUE == xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(1)))
     {
         lv_obj_del(bar);
         screen_sensor.temp_label = lv_label_create(screen_sensor.sensor_screen, NULL);
@@ -246,5 +280,25 @@ int screen_sensor_update(float temp, float humi)
 
     return 0;
 }
+int screen_weather_init()
+{
+    if (pdTRUE == xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(1)))
+    {
+        lv_obj_t *label = lv_label_create(weather.weather_screen, NULL);
+        lv_label_set_text(label, "Weather");
+        lv_obj_align(label, NULL, LV_ALIGN_CENTER, 0, 0);
+        xSemaphoreGive(xGuiSemaphore);
+    }
+    else
+    {
+        return -1;
+    }
 
+    return 0;
+}
+int screen_weather_destroy()
+{
+    lv_obj_del(weather.weather_screen);
+    return 0;
+}
 #endif

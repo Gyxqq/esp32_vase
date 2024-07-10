@@ -32,9 +32,25 @@
 #include "init_ble.c"
 #include "GUI_TASK/show_qrcode.c"
 #include "esp_sleep.h"
+#include "esp_log.h"
 int load_uuid();
 int read_temp_humi_uploader();
 int check_wifi_and_set_icon();
+int gui_interupt_init();
+static void gpio_isr_handler(void *arg)
+{
+    gui++;
+    ESP_EARLY_LOGI("ISR", "GPIO[%d] intr, val: %d gui:%d", GPIO_NUM_0, gpio_get_level(GPIO_NUM_0), gui);
+
+    if (gui % 2 == 1)
+    {
+        screen_manager(SENSOR_SCREEN, 1);
+    }
+    else
+    {
+        screen_manager(WEAHTER_SCREEN, 1);
+    }
+}
 void app_main(void)
 {
 
@@ -81,7 +97,9 @@ void app_main(void)
     init_mqtt();
     load_uuid();
     screen_manager(SENSOR_SCREEN, 0);
+    screen_manager(WEAHTER_SCREEN, 0);
     int_fast64_t counter = 0;
+    gui_interupt_init();
     while (1) // 存放一些定时任务
     {
         if (counter % 5 == 0)
@@ -190,17 +208,23 @@ int check_wifi_and_set_icon()
         if (ret != ESP_OK)
         {
             printf("wifi reconnect failed\n");
+
+            if (pdTRUE == xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(1)))
+            {
+                lv_obj_set_hidden(screen_sensor.wifi_label, true);
+
+                xSemaphoreGive(xGuiSemaphore);
+            }
         }
         else
         {
             printf("wifi reconnect success\n");
-        }
+            if (pdTRUE == xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(1)))
+            {
+                lv_obj_set_hidden(screen_sensor.wifi_label, false);
 
-        if (pdTRUE == xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(1)))
-        {
-            lv_obj_set_hidden(screen_sensor.wifi_label, true);
-
-            xSemaphoreGive(xGuiSemaphore);
+                xSemaphoreGive(xGuiSemaphore);
+            }
         }
 
         return -1;
@@ -216,5 +240,24 @@ int check_wifi_and_set_icon()
 
         return 0;
     }
+    return 0;
+}
+int gui_interupt_init()
+{
+    gpio_config_t io_conf;
+    io_conf.intr_type = GPIO_INTR_LOW_LEVEL;
+    io_conf.pull_up_en = 1; // 设置上拉
+    io_conf.pin_bit_mask = 1ULL << GPIO_NUM_0;
+    io_conf.mode = GPIO_MODE_INPUT;
+    gpio_config(&io_conf);
+    gpio_set_intr_type(GPIO_NUM_0, GPIO_INTR_NEGEDGE);
+    esp_err_t ret = gpio_install_isr_service(ESP_INTR_FLAG_LEVEL1);
+    if (ret != ESP_OK)
+    {
+        // 处理错误
+    }
+
+    // 注册中断处理程序
+    gpio_isr_handler_add(GPIO_NUM_0, gpio_isr_handler, NULL);
     return 0;
 }
