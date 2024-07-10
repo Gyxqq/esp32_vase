@@ -20,14 +20,7 @@ void base_mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t 
     case MQTT_EVENT_DISCONNECTED:
 
         printf("MQTT_EVENT_DISCONNECTED\n");
-        if(esp_wifi_connect()==ESP_OK)
-        {
-            printf("reconnect wifi success\n");
-        }
-        else
-        {
-            printf("reconnect wifi failed\n");
-        }
+        esp_mqtt_client_reconnect(client);
         break;
     case MQTT_EVENT_SUBSCRIBED:
         printf("MQTT_EVENT_SUBSCRIBED, msg_id=%d\n", event->msg_id);

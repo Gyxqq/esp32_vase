@@ -34,6 +34,7 @@
 #include "esp_sleep.h"
 int load_uuid();
 int read_temp_humi_uploader();
+int check_wifi_and_set_icon();
 void app_main(void)
 {
 
@@ -90,11 +91,18 @@ void app_main(void)
             size_t minEverFreeHeapSize = xPortGetMinimumEverFreeHeapSize();
             // 打印内存信息
             printf("Free heap size: %d, Minimum free heap size: %d\n", freeHeapSize, minEverFreeHeapSize);
-            // 延迟5秒钟
+            // 获取信号量当前计数
+            UBaseType_t uxSemaphoreCount = uxSemaphoreGetCount(xGuiSemaphore);
+            // 打印信号量信息
+            printf("Semaphore count: %d\n", uxSemaphoreCount);
         }
-        if (counter % 5 == 0)
+        if (counter % 20 == 0)
         {
             read_temp_humi_uploader();
+        }
+        if (counter % 60 == 0)
+        {
+            check_wifi_and_set_icon();
         }
         vTaskDelay(pdMS_TO_TICKS(1000));
         counter++;
@@ -168,5 +176,45 @@ int load_uuid()
         return -1;
     }
     nvs_close(nvs);
+    return 0;
+}
+
+int check_wifi_and_set_icon()
+{
+    wifi_ap_record_t ap_info;
+    esp_err_t ret = esp_wifi_sta_get_ap_info(&ap_info);
+    if (ret != ESP_OK)
+    {
+        printf("wifi not connected\n");
+        ret = esp_wifi_connect();
+        if (ret != ESP_OK)
+        {
+            printf("wifi reconnect failed\n");
+        }
+        else
+        {
+            printf("wifi reconnect success\n");
+        }
+
+        if (pdTRUE == xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(1)))
+        {
+            lv_obj_set_hidden(screen_sensor.wifi_label, true);
+
+            xSemaphoreGive(xGuiSemaphore);
+        }
+
+        return -1;
+    }
+    else
+    {
+        if (pdTRUE == xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(1)))
+        {
+            lv_obj_set_hidden(screen_sensor.wifi_label, false);
+
+            xSemaphoreGive(xGuiSemaphore);
+        }
+
+        return 0;
+    }
     return 0;
 }

@@ -4,7 +4,6 @@
 #include "../QRCode/qrcode.c"
 #include "esp_wifi.h"
 #include "../static_value.c"
-SemaphoreHandle_t xGuiSemaphore;
 int screen_manager(int screen_index, int opt);
 int screen_sensor_init();
 int screen_sensor_update(float temp, float humi);
@@ -50,19 +49,24 @@ void guiTask(void *pvParameter)
 void initGuiTask()
 {
     // 创建信号量
+    // 尝试获取信号量并调用lvgl相关函数
+    if (pdTRUE == xSemaphoreTake(xGuiSemaphore,pdMS_TO_TICKS(1000)))
+    {
 
-    // 定义定时器参数
-    const esp_timer_create_args_t periodic_timer_args = {
-        .callback = &lv_tick_task,
-        .name = "periodic_gui"};
+        // 定义定时器参数
+        const esp_timer_create_args_t periodic_timer_args = {
+            .callback = &lv_tick_task,
+            .name = "periodic_gui"};
 
-    // 创建定时器句柄
-    esp_timer_handle_t periodic_timer;
-    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, portTICK_PERIOD_MS * 1000));
+        // 创建定时器句柄
+        esp_timer_handle_t periodic_timer;
+        ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
+        ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, portTICK_PERIOD_MS * 1000));
 
-    // 创建GUI任务
-    xTaskCreate(guiTask, "guiTask", 2048, NULL, 5, NULL);
+        // 创建GUI任务
+        xTaskCreate(guiTask, "guiTask", 2048, NULL, 5, NULL);
+        xSemaphoreGive(xGuiSemaphore);
+    }
 }
 void init_dsp()
 {
@@ -157,50 +161,68 @@ int screen_manager(int screen_index, int opt) // 0: init 1:destroy
 
     if (screen_index == SENSOR_SCREEN)
     {
-        if (opt == 0)
+        // 尝试获取信号量并调用lvgl相关函数
+        if (pdTRUE == xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(1)))
         {
-            printf("sensor screen\n");
-            lv_obj_t *scr = lv_disp_get_scr_act(NULL);
-            if (scr != NULL)
+
+            if (opt == 0)
             {
-                printf("del scr\n");
-                lv_obj_del(scr);
+                printf("sensor screen\n");
+                lv_obj_t *scr = lv_disp_get_scr_act(NULL);
+                if (scr != NULL)
+                {
+                    printf("del scr\n");
+                    lv_obj_del(scr);
+                }
+                screen_sensor.sensor_screen = lv_obj_create(NULL, NULL);
+                lv_disp_load_scr(screen_sensor.sensor_screen);
+                assert(screen_sensor.sensor_screen != NULL);
+                xSemaphoreGive(xGuiSemaphore);
+                return screen_sensor_init();
             }
-            screen_sensor.sensor_screen = lv_obj_create(NULL, NULL);
-            lv_disp_load_scr(screen_sensor.sensor_screen);
-            assert(screen_sensor.sensor_screen != NULL);
-            return screen_sensor_init();
-        }
-        else if (opt == 1)
-        {
-            return screen_sensor_destroy();
+            else if (opt == 1)
+            {
+                xSemaphoreGive(xGuiSemaphore);
+                return screen_sensor_destroy();
+            }
+            xSemaphoreGive(xGuiSemaphore);
         }
     }
     return -1;
 }
 
 int screen_sensor_init()
-{
-    lv_obj_t *bar = lv_bar_create(screen_sensor.sensor_screen, NULL);
-    lv_bar_set_anim_time(bar, 2000);
-    lv_obj_set_size(bar, 80, 20);
-    lv_obj_align(bar, screen_sensor.sensor_screen, LV_ALIGN_CENTER, 0, 0);
-    lv_bar_set_value(bar, 100, LV_ANIM_ON);
-    // 设置动画时间
+{ // 尝试获取信号量并调用lvgl相关函数
+    lv_obj_t *bar = NULL;
+    if (pdTRUE == xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(1)))
+    {
+        bar = lv_bar_create(screen_sensor.sensor_screen, NULL);
+        lv_bar_set_anim_time(bar, 2000);
+        lv_obj_set_size(bar, 80, 20);
+        lv_obj_align(bar, screen_sensor.sensor_screen, LV_ALIGN_CENTER, 0, 0);
+        lv_bar_set_value(bar, 100, LV_ANIM_ON);
+        // 设置动画时间
+        xSemaphoreGive(xGuiSemaphore);
+    }
 
     vTaskDelay(2000 / portTICK_PERIOD_MS);
-    lv_obj_del(bar);
-    screen_sensor.temp_label = lv_label_create(screen_sensor.sensor_screen, NULL);
-    screen_sensor.humi_label = lv_label_create(screen_sensor.sensor_screen, NULL);
-    screen_sensor.wifi_label = lv_label_create(screen_sensor.sensor_screen, NULL);
-    lv_obj_set_style_local_text_font(screen_sensor.temp_label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_title());
-    lv_obj_set_style_local_text_font(screen_sensor.humi_label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_title());
-    lv_obj_align(screen_sensor.temp_label, screen_sensor.sensor_screen, LV_ALIGN_CENTER, -30, -30);
-    lv_obj_align(screen_sensor.humi_label, screen_sensor.sensor_screen, LV_ALIGN_CENTER, -30, 0);
-    lv_obj_align(screen_sensor.wifi_label, screen_sensor.sensor_screen, LV_ALIGN_OUT_TOP_RIGHT, -10, 15);
-    lv_label_set_text(screen_sensor.temp_label, "Temp: 0.0");
-    lv_label_set_text(screen_sensor.humi_label, "Humi: 0.0");
-    lv_label_set_text(screen_sensor.wifi_label, LV_SYMBOL_WIFI);
+    if (pdTRUE == xSemaphoreTake(xGuiSemaphore,pdMS_TO_TICKS(1)))
+    {
+        lv_obj_del(bar);
+        screen_sensor.temp_label = lv_label_create(screen_sensor.sensor_screen, NULL);
+        screen_sensor.humi_label = lv_label_create(screen_sensor.sensor_screen, NULL);
+        screen_sensor.wifi_label = lv_label_create(screen_sensor.sensor_screen, NULL);
+        lv_obj_set_style_local_text_font(screen_sensor.temp_label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_title());
+        lv_obj_set_style_local_text_font(screen_sensor.humi_label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_title());
+        lv_obj_align(screen_sensor.temp_label, screen_sensor.sensor_screen, LV_ALIGN_CENTER, -30, -30);
+        lv_obj_align(screen_sensor.humi_label, screen_sensor.sensor_screen, LV_ALIGN_CENTER, -30, 0);
+        lv_obj_align(screen_sensor.wifi_label, screen_sensor.sensor_screen, LV_ALIGN_OUT_TOP_RIGHT, -10, 15);
+        lv_label_set_text(screen_sensor.temp_label, "Temp: 0.0");
+        lv_label_set_text(screen_sensor.humi_label, "Humi: 0.0");
+        lv_label_set_text(screen_sensor.wifi_label, LV_SYMBOL_WIFI);
+        xSemaphoreGive(xGuiSemaphore);
+    }
+
     return 0;
 }
 int screen_sensor_destroy()
@@ -214,8 +236,14 @@ int screen_sensor_update(float temp, float humi)
     char humi_str[20];
     snprintf(temp_str, sizeof(temp_str), "Temp: %.2f", temp);
     snprintf(humi_str, sizeof(humi_str), "Humi: %.2f", humi);
-    lv_label_set_text(screen_sensor.temp_label, temp_str);
-    lv_label_set_text(screen_sensor.humi_label, humi_str);
+    // 尝试获取信号量并调用lvgl相关函数
+    if (pdTRUE == xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(1)))
+    {
+        lv_label_set_text(screen_sensor.temp_label, temp_str);
+        lv_label_set_text(screen_sensor.humi_label, humi_str);
+        xSemaphoreGive(xGuiSemaphore);
+    }
+
     return 0;
 }
 
