@@ -35,7 +35,7 @@ void guiTask(void *pvParameter)
     {
         // 延迟10ms
 
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(30));
 
         // 尝试获取信号量并调用lvgl相关函数
         if (pdTRUE == xSemaphoreTake(xGuiSemaphore, portMAX_DELAY))
@@ -158,10 +158,12 @@ int screen_manager(int screen_index, int opt) // 0: init 1:destroy
     if (screen_index == SENSOR_SCREEN)
     {
         if (opt == 0)
-        {   printf("sensor screen\n");
+        {
+            printf("sensor screen\n");
             lv_obj_t *scr = lv_disp_get_scr_act(NULL);
             if (scr != NULL)
-            {   printf("del scr\n");
+            {
+                printf("del scr\n");
                 lv_obj_del(scr);
             }
             screen_sensor.sensor_screen = lv_obj_create(NULL, NULL);
@@ -179,7 +181,15 @@ int screen_manager(int screen_index, int opt) // 0: init 1:destroy
 
 int screen_sensor_init()
 {
+    lv_obj_t *bar = lv_bar_create(screen_sensor.sensor_screen, NULL);
+    lv_bar_set_anim_time(bar, 2000);
+    lv_obj_set_size(bar, 80, 20);
+    lv_obj_align(bar, screen_sensor.sensor_screen, LV_ALIGN_CENTER, 0, 0);
+    lv_bar_set_value(bar, 100, LV_ANIM_ON);
+    // 设置动画时间
 
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    lv_obj_del(bar);
     screen_sensor.temp_label = lv_label_create(screen_sensor.sensor_screen, NULL);
     screen_sensor.humi_label = lv_label_create(screen_sensor.sensor_screen, NULL);
     screen_sensor.wifi_label = lv_label_create(screen_sensor.sensor_screen, NULL);
@@ -187,7 +197,7 @@ int screen_sensor_init()
     lv_obj_set_style_local_text_font(screen_sensor.humi_label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_title());
     lv_obj_align(screen_sensor.temp_label, screen_sensor.sensor_screen, LV_ALIGN_CENTER, -30, -30);
     lv_obj_align(screen_sensor.humi_label, screen_sensor.sensor_screen, LV_ALIGN_CENTER, -30, 0);
-    lv_obj_align(screen_sensor.wifi_label, screen_sensor.sensor_screen, LV_ALIGN_OUT_TOP_RIGHT, -10,15);
+    lv_obj_align(screen_sensor.wifi_label, screen_sensor.sensor_screen, LV_ALIGN_OUT_TOP_RIGHT, -10, 15);
     lv_label_set_text(screen_sensor.temp_label, "Temp: 0.0");
     lv_label_set_text(screen_sensor.humi_label, "Humi: 0.0");
     lv_label_set_text(screen_sensor.wifi_label, LV_SYMBOL_WIFI);

@@ -42,7 +42,8 @@ void app_main(void)
     printf("Hello world!\n");
     init_wifi();
     // init_ble();
-    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    // vTaskDelay(pdMS_TO_TICKS(1000));
 
     lv_init();
     lvgl_driver_init();
@@ -61,7 +62,7 @@ void app_main(void)
     printf("GUI Task has been created\n");
 
     // show_qrcode();
-    vTaskDelay(pdMS_TO_TICKS(5000));
+    // vTaskDelay(pdMS_TO_TICKS(5000));
     // 检查wifi连接状态
     wifi_ap_record_t ap_info;
     esp_err_t ret = esp_wifi_sta_get_ap_info(&ap_info);
