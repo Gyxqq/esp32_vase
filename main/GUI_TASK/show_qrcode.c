@@ -4,6 +4,11 @@
 #include "../QRCode/qrcode.c"
 #include "esp_wifi.h"
 #include "../static_value.c"
+#include "cJSON.h"
+#include "esp_http_client.h"
+#include "../http_func.c"
+#include "../yahei_16.c"
+LV_FONT_DECLARE(yahei_16)
 int screen_manager(int screen_index, int opt);
 int screen_sensor_init();
 int screen_sensor_update(float temp, float humi);
@@ -16,10 +21,16 @@ struct screen_sensor
     lv_obj_t *temp_label;
     lv_obj_t *humi_label;
     lv_obj_t *wifi_label;
+
 } screen_sensor;
 struct screen_weather
 {
     lv_obj_t *weather_screen;
+    lv_obj_t *wifi_label;
+    lv_obj_t *weather_label;
+    lv_obj_t *feelsLike;
+    lv_obj_t *mesh;
+    char *img_buf;
 } weather;
 static void lv_tick_task(void *arg)
 {
@@ -176,13 +187,23 @@ int screen_manager(int screen_index, int opt) // 0: init 1:toggle 2:destroy
                 printf("sensor screen\n");
                 screen_sensor.sensor_screen = lv_obj_create(NULL, NULL);
                 lv_scr_load(screen_sensor.sensor_screen);
-                assert(screen_sensor.sensor_screen != NULL);
+                if (screen_sensor.sensor_screen == NULL)
+                {
+                    xSemaphoreGive(xGuiSemaphore);
+                    return -1;
+                }
                 xSemaphoreGive(xGuiSemaphore);
                 return screen_sensor_init();
             }
             else if (opt == 1)
             {
 
+                if (screen_sensor.sensor_screen == NULL)
+                {
+                    ESP_EARLY_LOGE("SENSOR", "SENSOR SCREEN NULL");
+                    xSemaphoreGive(xGuiSemaphore);
+                    return -1;
+                }
                 lv_scr_load(screen_sensor.sensor_screen);
                 xSemaphoreGive(xGuiSemaphore);
                 return 1;
@@ -203,13 +224,23 @@ int screen_manager(int screen_index, int opt) // 0: init 1:toggle 2:destroy
             {
                 weather.weather_screen = lv_obj_create(NULL, NULL);
                 lv_scr_load(weather.weather_screen);
-                assert(weather.weather_screen != NULL);
+                if (weather.weather_screen == NULL)
+                {
+                    ESP_EARLY_LOGE("WEATHER", "WEATHER INIT SCREEN NULL");
+                    xSemaphoreGive(xGuiSemaphore);
+                    return -1;
+                }
                 xSemaphoreGive(xGuiSemaphore);
                 return screen_weather_init();
             }
             else if (opt == 1)
             {
-                assert(weather.weather_screen != NULL);
+                if (weather.weather_screen == NULL)
+                {
+                    ESP_EARLY_LOGE("WEATHER", "WEATHER SCREEN NULL");
+                    xSemaphoreGive(xGuiSemaphore);
+                    return -1;
+                }
                 lv_scr_load(weather.weather_screen);
                 xSemaphoreGive(xGuiSemaphore);
                 return 1;
@@ -284,13 +315,101 @@ int screen_weather_init()
 {
     if (pdTRUE == xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(1)))
     {
-        lv_obj_t *label = lv_label_create(weather.weather_screen, NULL);
-        lv_label_set_text(label, "Weather");
-        lv_obj_align(label, NULL, LV_ALIGN_CENTER, 0, 0);
+        weather.wifi_label = lv_label_create(weather.weather_screen, NULL);
+        lv_label_set_text(weather.wifi_label, LV_SYMBOL_WIFI);
+        lv_obj_align(weather.wifi_label, NULL, LV_ALIGN_IN_TOP_RIGHT, -10, 10);
         xSemaphoreGive(xGuiSemaphore);
     }
     else
     {
+        ESP_EARLY_LOGE("WEATHER", "WEATHER GET SEM ERROR0");
+        return -1;
+    }
+    char *weather_uri = "http://122.51.217.79:8084/get_weather";
+    esp_err_t err = init_http_get_client(weather_uri);
+    ESP_EARLY_LOGI("WEATHER", "GET WEATHER %s len %d", http_data_buffer, http_data_len);
+    cJSON *root = cJSON_Parse(http_data_buffer);
+    if (root == NULL)
+    {
+        ESP_EARLY_LOGE("WEATHER", "WEATHER JSON ERROR1");
+        return -1;
+    }
+    cJSON *now = cJSON_GetObjectItem(root, "now");
+    if (now == NULL)
+    {
+        ESP_EARLY_LOGE("WEATHER", "WEATHER JSON ERROR2");
+        return -1;
+    }
+    cJSON *text = cJSON_GetObjectItem(now, "text");
+    cJSON *icon = cJSON_GetObjectItem(now, "icon");
+    cJSON *feelsLike = cJSON_GetObjectItem(now, "feelsLike");
+    ESP_EARLY_LOGI("WEATHER", "GET WEATHER %s", text->valuestring);
+
+    char *data = NULL;
+    data = malloc(100);
+    if (pdTRUE == xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(1)))
+    {
+        weather.weather_label = lv_label_create(weather.weather_screen, NULL);
+        lv_obj_set_style_local_text_font(weather.weather_label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &yahei_16);
+        if (text == NULL)
+        {
+            ESP_EARLY_LOGE("WEATHER", "WEATHER GET TEXT ERROR");
+            lv_label_set_text(weather.weather_label, "ERROR");
+            lv_obj_align(weather.weather_label, NULL, LV_ALIGN_CENTER, -30, 0);
+            return -1;
+        }
+        snprintf(data, 100, "当前天气:%s", text->valuestring);
+        lv_label_set_text(weather.weather_label, data);
+        lv_obj_align(weather.weather_label, NULL, LV_ALIGN_IN_TOP_LEFT, 10, 30);
+        memset(data, 0, 100);
+
+        weather.feelsLike = lv_label_create(weather.weather_screen, NULL);
+        lv_obj_set_style_local_text_font(weather.feelsLike, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &yahei_16);
+        if (feelsLike == NULL)
+        {
+            ESP_EARLY_LOGE("WEATHER", "WEATHER GET FEELSLIKE ERROR");
+            lv_label_set_text(weather.feelsLike, "ERROR");
+            lv_obj_align(weather.feelsLike, NULL, LV_ALIGN_CENTER, -30, 0);
+            return -1;
+        }
+        snprintf(data, 100, "体感温度:%s", feelsLike->valuestring);
+        lv_label_set_text(weather.feelsLike, data);
+        lv_obj_align(weather.feelsLike, NULL, LV_ALIGN_IN_TOP_LEFT, 10, 60);
+        xSemaphoreGive(xGuiSemaphore);
+
+        weather.mesh = lv_label_create(weather.weather_screen, NULL);
+         lv_obj_set_style_local_text_font(weather.mesh, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT,lv_theme_get_font_title());
+        lv_label_set_text(weather.mesh, "MESH:ROOT");
+        lv_obj_align(weather.mesh, NULL, LV_ALIGN_IN_TOP_LEFT, 10, 90);
+        }
+    else
+    {
+        ESP_EARLY_LOGE("WEATHER", "WEATHER GET SEM ERROR1");
+        return -1;
+    }
+
+    destroy_http_client();
+    memset(data, 0, 100);
+    snprintf(data, 100, "http://icons.qweather.com/assets/icons/%s-fill.svg", icon->valuestring);
+    char *server = "http://122.51.217.79:8084/convert_svg";
+    err = init_http_post_client(server, data, strlen(data));
+    ESP_EARLY_LOGI("IMG", "IMG LEN %d", http_data_len);
+    weather.img_buf = malloc(http_data_len);
+    memcpy(weather.img_buf, http_data_buffer, http_data_len);
+    destroy_http_client();
+    ESP_EARLY_LOGI("IMG", "IMG LOAD BUF");
+    free(data);
+    if (pdTRUE == xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(2)))
+    {
+        ESP_EARLY_LOGI("IMG", "IMG LOADING ");
+        lv_obj_t *cancas = lv_canvas_create(weather.weather_screen, NULL);
+        lv_canvas_set_buffer(cancas, (void *)weather.img_buf, 16, 16, LV_IMG_CF_TRUE_COLOR);
+        lv_obj_align(cancas, NULL, LV_ALIGN_IN_TOP_RIGHT, -10, 30);
+        xSemaphoreGive(xGuiSemaphore);
+    }
+    else
+    {
+        ESP_EARLY_LOGE("IMG", "IMG GET SEM ERROR2");
         return -1;
     }
 

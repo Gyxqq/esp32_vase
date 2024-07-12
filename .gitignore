@@ -2,3 +2,4 @@ build/*
 main/QRCode
 managed_components/
 *.zip
+QWeather-Icons-1.6.0/*

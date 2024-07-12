@@ -42,7 +42,10 @@
         "xpt2046.h": "c",
         "disp_driver.h": "c",
         "disp_spi.h": "c",
-        "hx8357.h": "c"
+        "hx8357.h": "c",
+        "http_client.h": "c",
+        "cjson.h": "c",
+        "lv_font.h": "c"
     },
     "cmake.configureOnOpen": true
 }

@@ -97,9 +97,15 @@ void app_main(void)
     init_mqtt();
     load_uuid();
     screen_manager(SENSOR_SCREEN, 0);
-    screen_manager(WEAHTER_SCREEN, 0);
-    int_fast64_t counter = 0;
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    int ret1 = screen_manager(WEAHTER_SCREEN, 0);
+    if (ret1 == -1)
+    {
+        ESP_EARLY_LOGE("main", "weather screen init failed");
+    }
     gui_interupt_init();
+
+    int_fast64_t counter = 0;
     while (1) // 存放一些定时任务
     {
         if (counter % 5 == 0)
@@ -122,6 +128,7 @@ void app_main(void)
         {
             check_wifi_and_set_icon();
         }
+
         vTaskDelay(pdMS_TO_TICKS(1000));
         counter++;
         if (counter == 0xffffffff)
