@@ -66,18 +66,11 @@ esp_err_t http_get_event_handler(esp_http_client_event_t *evt)
         break;
     case HTTP_EVENT_ON_DATA:
         ESP_LOGI("HTTP", "HTTP_EVENT_ON_DATA, len=%d", (int)evt->data_len);
-        if (!esp_http_client_is_chunked_response(evt->client))
-        {
+
             // 复制数据到缓冲区
-            memcpy(http_data_buffer, evt->data, evt->data_len);
-            http_data_len = evt->data_len;
-        }
-        else
-        {
-            // 复制数据到缓冲区
+            ESP_EARLY_LOGI("HTTP", "HTTP_EVENT_COPY_CHUNKED_DATA len=%d", (int)evt->data_len);
             memcpy(http_data_buffer + http_data_len, evt->data, evt->data_len);
             http_data_len += evt->data_len;
-        }
 
         break;
     case HTTP_EVENT_ON_FINISH:

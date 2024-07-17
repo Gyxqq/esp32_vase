@@ -5,7 +5,10 @@
 #include "init_wifi.c"
 #include <nvs.h>
 // #define TAG "MQTT"
-
+#include "esp_log.h"
+#include "cJSON.h"
+#include "GUI_TASK/show_qrcode.c"
+int command_handler(char *command);
 void base_mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
     esp_mqtt_event_handle_t event = event_data;
@@ -15,7 +18,7 @@ void base_mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t 
     {
     case MQTT_EVENT_CONNECTED:
         printf("MQTT_EVENT_CONNECTED\n");
-        esp_mqtt_client_subscribe(client, "send-command", 1);
+        esp_mqtt_client_subscribe(client, "send-command", 0);
         break;
     case MQTT_EVENT_DISCONNECTED:
 
@@ -29,6 +32,30 @@ void base_mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t 
     case MQTT_EVENT_DATA:
         printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
         printf("DATA=%.*s\r\n", event->data_len, event->data);
+        cJSON *root = cJSON_Parse(event->data);
+        if (root == NULL)
+        {
+            ESP_EARLY_LOGE("MQTT", "json ROOT parse failed");
+            break;
+        }
+        cJSON *uuid_json = cJSON_GetObjectItem(root, "plant_id");
+        if (uuid_json == NULL)
+        {
+            ESP_EARLY_LOGE("MQTT", "json  parse failed");
+            break;
+        }
+        if (strcmp(uuid_json->valuestring, uuid) != 0)
+        {
+            ESP_EARLY_LOGI("MQTT", "uuid not match");
+            break;
+        }
+        cJSON *command_json = cJSON_GetObjectItem(root, "command");
+        if (command_json == NULL)
+        {
+            ESP_EARLY_LOGE("MQTT", "json command parse failed");
+            break;
+        }
+        command_handler(command_json->valuestring);
 
         break;
 
@@ -70,5 +97,31 @@ void init_mqtt()
 void destory_mqtt()
 {
     esp_mqtt_client_destroy(client);
+}
+int command_handler(char *command)
+{
+    ESP_EARLY_LOGI("MQTT", "command: %s", command);
+    if (strcmp(command, "reboot") == 0)
+    {
+        esp_restart();
+    }
+    else if (strcmp(command, "switch") == 0)
+    {
+        ESP_EARLY_LOGI("MQTT", "switch");
+
+        if (gui % 2 == 1)
+        {
+            ESP_EARLY_LOGI("MQTT", "switch to sensor screen");
+            screen_manager(SENSOR_SCREEN, 1);
+        }
+        else
+        {
+            ESP_EARLY_LOGI("MQTT", "switch to weather screen");
+            screen_manager(WEAHTER_SCREEN, 1);
+        }
+        gui++;
+    }
+
+    return 0;
 }
 #endif

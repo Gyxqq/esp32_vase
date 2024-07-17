@@ -11,7 +11,7 @@
 LV_FONT_DECLARE(yahei_16)
 int screen_manager(int screen_index, int opt);
 int screen_sensor_init();
-int screen_sensor_update(float temp, float humi);
+int screen_sensor_update(float temp, float humi, float lux);
 int screen_sensor_destroy();
 int screen_weather_init();
 int screen_weather_destroy();
@@ -21,6 +21,7 @@ struct screen_sensor
     lv_obj_t *temp_label;
     lv_obj_t *humi_label;
     lv_obj_t *wifi_label;
+    lv_obj_t * lux_label;
 
 } screen_sensor;
 struct screen_weather
@@ -160,7 +161,6 @@ void show_qrcode()
     lv_canvas_set_buffer(canvas, buf, qrcode->size, qrcode->size, LV_IMG_CF_TRUE_COLOR);
     lv_obj_align(canvas, NULL, LV_ALIGN_CENTER, 0, 20);
     // 释放缓冲区
-    free(buf);
     free(qrcode);
     // 创建标签
     lv_obj_t *scan_qrcode_label = lv_label_create(scr, NULL);
@@ -277,13 +277,17 @@ int screen_sensor_init()
         screen_sensor.temp_label = lv_label_create(screen_sensor.sensor_screen, NULL);
         screen_sensor.humi_label = lv_label_create(screen_sensor.sensor_screen, NULL);
         screen_sensor.wifi_label = lv_label_create(screen_sensor.sensor_screen, NULL);
+        screen_sensor.lux_label = lv_label_create(screen_sensor.sensor_screen, NULL);
         lv_obj_set_style_local_text_font(screen_sensor.temp_label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_title());
         lv_obj_set_style_local_text_font(screen_sensor.humi_label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_title());
+        lv_obj_set_style_local_text_font(screen_sensor.lux_label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_title());
         lv_obj_align(screen_sensor.temp_label, screen_sensor.sensor_screen, LV_ALIGN_CENTER, -30, -30);
         lv_obj_align(screen_sensor.humi_label, screen_sensor.sensor_screen, LV_ALIGN_CENTER, -30, 0);
+        lv_obj_align(screen_sensor.lux_label, screen_sensor.sensor_screen, LV_ALIGN_CENTER, -30, 30);
         lv_obj_align(screen_sensor.wifi_label, screen_sensor.sensor_screen, LV_ALIGN_OUT_TOP_RIGHT, -10, 15);
         lv_label_set_text(screen_sensor.temp_label, "Temp: 0.0");
         lv_label_set_text(screen_sensor.humi_label, "Humi: 0.0");
+        lv_label_set_text(screen_sensor.lux_label, "Lux: 0.0");
         lv_label_set_text(screen_sensor.wifi_label, LV_SYMBOL_WIFI);
         xSemaphoreGive(xGuiSemaphore);
     }
@@ -295,17 +299,20 @@ int screen_sensor_destroy()
     lv_obj_del(screen_sensor.sensor_screen);
     return 0;
 }
-int screen_sensor_update(float temp, float humi)
+int screen_sensor_update(float temp, float humi, float lux)
 {
     char temp_str[20];
     char humi_str[20];
+    char lux_str[20];
     snprintf(temp_str, sizeof(temp_str), "Temp: %.2f", temp);
     snprintf(humi_str, sizeof(humi_str), "Humi: %.2f", humi);
+    snprintf(lux_str, sizeof(lux_str), "Lux: %.2f", lux);
     // 尝试获取信号量并调用lvgl相关函数
     if (pdTRUE == xSemaphoreTake(xGuiSemaphore, pdMS_TO_TICKS(1)))
     {
         lv_label_set_text(screen_sensor.temp_label, temp_str);
         lv_label_set_text(screen_sensor.humi_label, humi_str);
+        lv_label_set_text(screen_sensor.lux_label, lux_str);
         xSemaphoreGive(xGuiSemaphore);
     }
 
@@ -317,7 +324,9 @@ int screen_weather_init()
     {
         weather.wifi_label = lv_label_create(weather.weather_screen, NULL);
         lv_label_set_text(weather.wifi_label, LV_SYMBOL_WIFI);
-        lv_obj_align(weather.wifi_label, NULL, LV_ALIGN_IN_TOP_RIGHT, -10, 10);
+        lv_obj_set_style_local_text_font(weather.wifi_label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_normal());
+        lv_obj_align(weather.wifi_label, weather.weather_screen, LV_ALIGN_IN_TOP_RIGHT, -10,5);
+
         xSemaphoreGive(xGuiSemaphore);
     }
     else
@@ -378,10 +387,10 @@ int screen_weather_init()
         xSemaphoreGive(xGuiSemaphore);
 
         weather.mesh = lv_label_create(weather.weather_screen, NULL);
-         lv_obj_set_style_local_text_font(weather.mesh, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT,lv_theme_get_font_title());
+        lv_obj_set_style_local_text_font(weather.mesh, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_title());
         lv_label_set_text(weather.mesh, "MESH:ROOT");
         lv_obj_align(weather.mesh, NULL, LV_ALIGN_IN_TOP_LEFT, 10, 90);
-        }
+    }
     else
     {
         ESP_EARLY_LOGE("WEATHER", "WEATHER GET SEM ERROR1");
@@ -404,7 +413,7 @@ int screen_weather_init()
         ESP_EARLY_LOGI("IMG", "IMG LOADING ");
         lv_obj_t *cancas = lv_canvas_create(weather.weather_screen, NULL);
         lv_canvas_set_buffer(cancas, (void *)weather.img_buf, 16, 16, LV_IMG_CF_TRUE_COLOR);
-        lv_obj_align(cancas, NULL, LV_ALIGN_IN_TOP_RIGHT, -10, 30);
+        lv_obj_align(cancas, NULL, LV_ALIGN_IN_TOP_RIGHT, -10, 60);
         xSemaphoreGive(xGuiSemaphore);
     }
     else

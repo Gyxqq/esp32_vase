@@ -4,6 +4,11 @@
 #include "driver/i2c_master.h"
 #include "freertos/task.h"
 #include "freertos/FreeRTOS.h"
+#include "driver/adc.h"
+#include "esp_adc/adc_oneshot.h"
+#include "esp_log.h"
+#include "light_sensor_list.c"
+#include "hal/adc_types.h"
 #define I2C_SCL_IO 18
 #define I2C_SDA_IO 5
 void search_sensor();
@@ -49,9 +54,8 @@ struct temp_hum_data read_sensor()
     if (ret != ESP_OK)
     {
         printf("i2c_master_transmit failed\n");
-        struct temp_hum_data re={-1,-1};
+        struct temp_hum_data re = {-1, -1};
         return re;
-        
     }
     vTaskDelay(100 / portTICK_PERIOD_MS);
     data[0] = 0x71;
@@ -59,7 +63,7 @@ struct temp_hum_data read_sensor()
     if (ret != ESP_OK)
     {
         printf("i2c_master_transmit_receive failed\n");
-        struct temp_hum_data re={-1,-1};
+        struct temp_hum_data re = {-1, -1};
         return re;
     }
 
@@ -89,7 +93,7 @@ struct temp_hum_data read_sensor()
     humidity = (tmp * 1.0 / 1048576 * 1.0) * 100;
     printf("\ntemp: %.2f\nhumidity: %.2f%%\n", temp, humidity);
 
-    struct temp_hum_data re={temp,humidity};
+    struct temp_hum_data re = {temp, humidity};
     return re;
 }
 void search_sensor()
@@ -102,6 +106,37 @@ void search_sensor()
             printf("Found device at address: %x\n", i);
         }
     }
+}
+double get_light()
+{
+ 
+
+    
+    int raw;
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_DB_11);
+    raw = adc1_get_raw(ADC1_CHANNEL_4);
+    ESP_EARLY_LOGI("light", "raw: %d", raw);
+    float light_v = raw * 3.1 / 4095;
+    ESP_EARLY_LOGI("light", "light_v: %f", light_v);
+    int light_r = 10000 * light_v / (3.1 - light_v);
+    ESP_EARLY_LOGI("light", "light_r: %d", light_r);
+    for (int i = 452; i >0; i--)
+    {
+        if (light_sensor_list[i].r >= light_r)
+        {
+            if (i == 0)
+            {
+                return light_sensor_list[i].lux;
+            }
+            else
+            {
+                // 线性插值
+                return 1.0 * light_sensor_list[i - 1].lux + (light_r - light_sensor_list[i - 1].r) * 1.0 * (light_sensor_list[i].lux - light_sensor_list[i - 1].lux) / (light_sensor_list[i].r - light_sensor_list[i - 1].r);
+            }
+        }
+    }
+    return 1001;
 }
 
 #endif

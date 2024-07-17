@@ -45,7 +45,9 @@
         "hx8357.h": "c",
         "http_client.h": "c",
         "cjson.h": "c",
-        "lv_font.h": "c"
+        "lv_font.h": "c",
+        "adc_oneshot.h": "c",
+        "adc_types.h": "c"
     },
     "cmake.configureOnOpen": true
 }

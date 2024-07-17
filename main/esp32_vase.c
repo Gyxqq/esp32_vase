@@ -34,7 +34,7 @@
 #include "esp_sleep.h"
 #include "esp_log.h"
 int load_uuid();
-int read_temp_humi_uploader();
+int read_temp_humi_lux_uploader();
 int check_wifi_and_set_icon();
 int gui_interupt_init();
 static void gpio_isr_handler(void *arg)
@@ -91,7 +91,7 @@ void app_main(void)
         init_ble();
         while (true)
         {
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            vTaskDelay(pdMS_TO_TICKS(100));
         }
     }
     init_mqtt();
@@ -122,7 +122,7 @@ void app_main(void)
         }
         if (counter % 20 == 0)
         {
-            read_temp_humi_uploader();
+            read_temp_humi_lux_uploader();
         }
         if (counter % 60 == 0)
         {
@@ -140,7 +140,7 @@ void app_main(void)
     fflush(stdout);
     esp_restart();
 }
-int read_temp_humi_uploader()
+int read_temp_humi_lux_uploader()
 {
     struct temp_hum_data data = read_sensor();
     if (data.temp == -1)
@@ -148,12 +148,13 @@ int read_temp_humi_uploader()
         printf("read sensor failed\n");
         return -1;
     }
+    float lux = get_light();
     char *topic = "get-history";
     char *payload = malloc(200);
-    sprintf(payload, "{\n\"msg\": \"SUCCESS\",\n\"plant_id\": \"%s\",\n\"temperature\": %.2f,\n\"humidity\": %.2f,\n\"luminance\": 50\n}", uuid, data.temp, data.hum);
+    sprintf(payload, "{\n\"msg\": \"SUCCESS\",\n\"plant_id\": \"%s\",\n\"temperature\": %.2f,\n\"humidity\": %.2f,\n\"luminance\": %.2f\n}", uuid, data.temp, data.hum, lux);
     esp_mqtt_client_publish(client, topic, payload, 0, 0, 0);
     free(payload);
-    screen_sensor_update(data.temp, data.hum);
+    screen_sensor_update(data.temp, data.hum, lux);
     return 0;
 }
 
