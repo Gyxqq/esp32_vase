@@ -1,7 +1,8 @@
 io ,用途
-13 ,lvgl mosi
+13 ,lvgl mosi 
 14 ,lvgl sclk
 15 ,lvgl cs
 16 ,lvgl dc
  5 ,i2c sda
 18 ,i2c scl
+32,light adc
