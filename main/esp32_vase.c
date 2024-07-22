@@ -120,6 +120,7 @@ void app_main(void)
             UBaseType_t uxSemaphoreCount = uxSemaphoreGetCount(xGuiSemaphore);
             // 打印信号量信息
             printf("Semaphore count: %d\n", uxSemaphoreCount);
+            
         }
         if (counter % 20 == 0)
         {
