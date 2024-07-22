@@ -122,7 +122,7 @@ void app_main(void)
         }
         if (counter % 20 == 0)
         {
-            read_temp_humi_lux_uploader();
+            // read_temp_humi_lux_uploader();
         }
         if (counter % 60 == 0)
         {
