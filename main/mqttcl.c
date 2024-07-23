@@ -8,6 +8,7 @@
 #include "esp_log.h"
 #include "cJSON.h"
 #include "GUI_TASK/show_qrcode.c"
+#include "light.h"
 int command_handler(char *command);
 void base_mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
@@ -120,6 +121,16 @@ int command_handler(char *command)
             screen_manager(WEAHTER_SCREEN, 1);
         }
         gui++;
+    }
+    else if (strcmp(command, "light-on") == 0)
+    {
+        ESP_EARLY_LOGI("MQTT", "LIGHT_ON");
+        light_on();
+    }
+    else if (strcmp(command, "light-off") == 0)
+    {
+        ESP_EARLY_LOGI("MQTT", "LIGHT-OFF");
+        light_off();
     }
 
     return 0;
