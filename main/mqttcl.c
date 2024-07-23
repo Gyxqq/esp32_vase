@@ -8,7 +8,7 @@
 #include "esp_log.h"
 #include "cJSON.h"
 #include "GUI_TASK/show_qrcode.c"
-#include "light.h"
+#include "light.c"
 int command_handler(char *command);
 void base_mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
