@@ -33,6 +33,8 @@
 #include "GUI_TASK/show_qrcode.c"
 #include "esp_sleep.h"
 #include "esp_log.h"
+#include "light.c"
+#include "water.c"
 int load_uuid();
 int read_temp_humi_lux_uploader();
 int check_wifi_and_set_icon();
@@ -105,6 +107,8 @@ void app_main(void)
     }
     gui_interupt_init();
 
+    init_light_gpio();
+    init_water();
     int_fast64_t counter = 0;
     while (1) // 存放一些定时任务
     {
