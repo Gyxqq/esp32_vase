@@ -14,7 +14,7 @@ void base_mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t 
 {
     esp_mqtt_event_handle_t event = event_data;
     esp_mqtt_client_handle_t client = handler_args;
-    // your code here
+    // your code here3
     switch (event->event_id)
     {
     case MQTT_EVENT_CONNECTED:
