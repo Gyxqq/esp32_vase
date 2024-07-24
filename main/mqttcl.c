@@ -9,6 +9,7 @@
 #include "cJSON.h"
 #include "GUI_TASK/show_qrcode.c"
 #include "light.c"
+#include "water.c"
 int command_handler(char *command);
 void base_mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
@@ -131,6 +132,11 @@ int command_handler(char *command)
     {
         ESP_EARLY_LOGI("MQTT", "LIGHT-OFF");
         light_off();
+    }
+    else if (strcmp("water", command) == 0)
+    {
+        ESP_EARLY_LOGI("MQTT", "WATER");
+        xTaskCreate(water_on, "water_on", 2048, NULL, 10, NULL);
     }
 
     return 0;
