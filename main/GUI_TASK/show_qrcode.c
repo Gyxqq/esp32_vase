@@ -15,6 +15,8 @@ int screen_sensor_update(float temp, float humi, float lux);
 int screen_sensor_destroy();
 int screen_weather_init();
 int screen_weather_destroy();
+lv_obj_t *qrscr=NULL;
+uint8_t *img_buf;
 struct screen_sensor
 {
     lv_obj_t *sensor_screen;
@@ -105,6 +107,7 @@ void show_qrcode()
     }
 
     assert(scr != NULL);
+    qrscr = scr;
     lv_obj_t *label = lv_label_create(scr, NULL);
     lv_label_set_text(label, "Hello World!");
     lv_obj_align(label, NULL, LV_ALIGN_CENTER, 0, 0);
@@ -138,6 +141,7 @@ void show_qrcode()
     lv_color_t *buf = heap_caps_malloc(qrcode->size * qrcode->size * color_depth / 8, (1 << 3));
     assert(buf != NULL);
     // 8位到16位rgb565
+    img_buf = buf;
     for (int x = 0; x < qrcode->size; x++)
     {
         for (int y = 0; y < qrcode->size; y++)

@@ -68,7 +68,6 @@ void base_mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t 
 void init_mqtt()
 {
     asm("nop");
-
     nvs_handle_t nvs;
     nvs_open("storage", NVS_READWRITE, &nvs);
     size_t size = 0;
