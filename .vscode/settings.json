@@ -47,7 +47,8 @@
         "cjson.h": "c",
         "lv_font.h": "c",
         "adc_oneshot.h": "c",
-        "adc_types.h": "c"
+        "adc_types.h": "c",
+        "mesh.h": "c"
     },
     "cmake.configureOnOpen": true
 }

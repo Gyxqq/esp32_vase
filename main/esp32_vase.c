@@ -16,7 +16,6 @@
 #include "esp_system.h"
 #include "driver/gpio.h"
 
-
 #include "../build/config/sdkconfig.h"
 // #include "lvgl.h"
 
@@ -36,6 +35,9 @@
 #include "esp_log.h"
 #include "light.c"
 #include "water.c"
+#include "init_mesh.c"
+#include "config.h"
+
 int load_uuid();
 int read_temp_humi_lux_uploader();
 int check_wifi_and_set_icon();
@@ -60,11 +62,14 @@ void app_main(void)
     init_i2c();
     xGuiSemaphore = xSemaphoreCreateMutex();
     printf("Hello world!\n");
+    
+#ifdef USE_MESH
+    init_mesh();
+#else
     init_wifi();
+#endif
     // init_ble();
-
-    // vTaskDelay(pdMS_TO_TICKS(1000));
-
+    // vTaskDelay(pdMS_TO_TICKS(20000));
     lv_init();
     lvgl_driver_init();
     lv_color_t *buf1 = heap_caps_malloc(DISP_BUF_SIZE * sizeof(lv_color_t), (1 << 3));
@@ -94,7 +99,16 @@ void app_main(void)
         init_ble();
         while (true)
         {
-            vTaskDelay(pdMS_TO_TICKS(100));
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            wifi_ap_record_t ap_info;
+            esp_err_t ret = esp_wifi_sta_get_ap_info(&ap_info);
+            if(ret==ESP_OK){
+                deinit_ble();
+                lv_obj_del(qrscr);
+                free(img_buf);
+                vTaskDelay(pdMS_TO_TICKS(2000));
+                break;
+            }
         }
     }
     init_mqtt();
@@ -124,7 +138,6 @@ void app_main(void)
             UBaseType_t uxSemaphoreCount = uxSemaphoreGetCount(xGuiSemaphore);
             // 打印信号量信息
             printf("Semaphore count: %d\n", uxSemaphoreCount);
-            
         }
         if (counter % 20 == 0)
         {
@@ -157,6 +170,11 @@ int read_temp_humi_lux_uploader()
     float lux = get_light();
     char *topic = "get-history";
     char *payload = malloc(200);
+    if (uuid == NULL)
+    {
+        uuid = "123456";
+    }
+    assert(payload != NULL);
     sprintf(payload, "{\n\"msg\": \"SUCCESS\",\n\"plant_id\": \"%s\",\n\"temperature\": %.2f,\n\"humidity\": %.2f,\n\"luminance\": %.2f\n}", uuid, data.temp, data.hum, lux);
     esp_mqtt_client_publish(client, topic, payload, 0, 0, 0);
     free(payload);
