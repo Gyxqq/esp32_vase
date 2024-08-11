@@ -48,7 +48,9 @@
         "lv_font.h": "c",
         "adc_oneshot.h": "c",
         "adc_types.h": "c",
-        "mesh.h": "c"
+        "mesh.h": "c",
+        "i2s.h": "c",
+        "i2s_common.h": "c"
     },
     "cmake.configureOnOpen": true
 }

@@ -37,12 +37,12 @@
 #include "water.c"
 #include "init_mesh.c"
 #include "config.h"
-
+#include "speech_recognition.c"
 int load_uuid();
 int read_temp_humi_lux_uploader();
 int check_wifi_and_set_icon();
 int gui_interupt_init();
-static void gpio_isr_handler(void *arg)
+static void  gpio_isr_handler(void *arg)
 {
     gui++;
     ESP_EARLY_LOGI("ISR", "GPIO[%d] intr, val: %d gui:%d", GPIO_NUM_0, gpio_get_level(GPIO_NUM_0), gui);
@@ -62,7 +62,7 @@ void app_main(void)
     init_i2c();
     xGuiSemaphore = xSemaphoreCreateMutex();
     printf("Hello world!\n");
-    
+    esp_log_level_set("*", ESP_LOG_DEBUG);
 #ifdef USE_MESH
     init_mesh();
 #else
@@ -102,11 +102,14 @@ void app_main(void)
             vTaskDelay(pdMS_TO_TICKS(1000));
             wifi_ap_record_t ap_info;
             esp_err_t ret = esp_wifi_sta_get_ap_info(&ap_info);
-            if(ret==ESP_OK){
+            if (ret == ESP_OK)
+            {
                 deinit_ble();
                 lv_obj_del(qrscr);
                 free(img_buf);
                 vTaskDelay(pdMS_TO_TICKS(2000));
+                // esp_mesh_stop();
+
                 break;
             }
         }
@@ -120,10 +123,17 @@ void app_main(void)
     {
         ESP_EARLY_LOGE("main", "weather screen init failed");
     }
-    gui_interupt_init();
+
 
     init_light_gpio();
     init_water();
+#ifdef USE_SPEECH_RECOGNITION
+    init_i2s();
+    ESP_EARLY_LOGI("main", "init i2s success");
+    xTaskCreate(i2s_read_task, "speech_recognition_task", 4096, NULL, 10, NULL);
+    ESP_EARLY_LOGI("main", "create i2s task success");
+#endif
+    gui_interupt_init();
     int_fast64_t counter = 0;
     while (1) // 存放一些定时任务
     {
@@ -277,19 +287,32 @@ int check_wifi_and_set_icon()
 int gui_interupt_init()
 {
     gpio_config_t io_conf;
-    io_conf.intr_type = GPIO_INTR_LOW_LEVEL;
+    io_conf.intr_type = GPIO_INTR_NEGEDGE;
     io_conf.pull_up_en = 1; // 设置上拉
+    io_conf.pull_down_en = 0;
     io_conf.pin_bit_mask = 1ULL << GPIO_NUM_0;
     io_conf.mode = GPIO_MODE_INPUT;
     gpio_config(&io_conf);
-    gpio_set_intr_type(GPIO_NUM_0, GPIO_INTR_NEGEDGE);
-    esp_err_t ret = gpio_install_isr_service(ESP_INTR_FLAG_LEVEL1);
+    // gpio_set_intr_type(GPIO_NUM_0, GPIO_INTR_NEGEDGE);
+    // esp_err_t ret = gpio_install_isr_service(ESP_INTR_FLAG_LEVEL2);
+    // if (ret != ESP_OK)
+    // {
+    //     // 处理错误
+    // }
+    // // 注册中断处理程序
+    // gpio_isr_handler_add(GPIO_NUM_0, gpio_isr_handler, NULL);
+    // // esp_intr_alloc(GPIO_NUM_0, ESP_INTR_FLAG_LEVEL1, gpio_isr_handler, NULL, NULL);
+
+    esp_err_t ret = gpio_install_isr_service(ESP_INTR_FLAG_LEVEL3);
     if (ret != ESP_OK)
     {
-        // 处理错误
+        printf("Failed to install GPIO ISR service: %s\n", esp_err_to_name(ret));
+        return -1;
     }
-
-    // 注册中断处理程序
     gpio_isr_handler_add(GPIO_NUM_0, gpio_isr_handler, NULL);
+    ESP_EARLY_LOGI("ISR", "install gpio isr service success");
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    esp_intr_dump(stderr);
+
     return 0;
 }
