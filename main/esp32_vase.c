@@ -42,7 +42,7 @@ int load_uuid();
 int read_temp_humi_lux_uploader();
 int check_wifi_and_set_icon();
 int gui_interupt_init();
-static void  gpio_isr_handler(void *arg)
+static void gpio_isr_handler(void *arg)
 {
     gui++;
     ESP_EARLY_LOGI("ISR", "GPIO[%d] intr, val: %d gui:%d", GPIO_NUM_0, gpio_get_level(GPIO_NUM_0), gui);
@@ -126,12 +126,16 @@ void app_main(void)
     }
 
 
+#ifdef USE_LIGHT
     init_light_gpio();
+#endif
+#ifdef USE_WATER
     init_water();
+#endif
 #ifdef USE_SPEECH_RECOGNITION
     init_i2s();
     ESP_EARLY_LOGI("main", "init i2s success");
-    xTaskCreate(i2s_read_task, "speech_recognition_task", 4096, NULL, 10, NULL);
+    xTaskCreate(i2s_read_task, "speech_recognition_task", 8192, NULL, 10, NULL);
     ESP_EARLY_LOGI("main", "create i2s task success");
 #endif
     gui_interupt_init();
@@ -152,7 +156,9 @@ void app_main(void)
         }
         if (counter % 20 == 0)
         {
+#ifdef USE_SPEECH_RECOGNITION
             read_temp_humi_lux_uploader();
+#endif
         }
         if (counter % 60 == 0)
         {

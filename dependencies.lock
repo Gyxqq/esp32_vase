@@ -1,0 +1,15 @@
+dependencies:
+  espressif/esp-dsp:
+    component_hash: null
+    source:
+      path: F:\projects\esp32_vase\components\espressif__esp-dsp
+      type: local
+    version: 1.5.1
+  idf:
+    component_hash: null
+    source:
+      type: idf
+    version: 5.2.2
+manifest_hash: e1404512fe98d42ff51b682736049aa5377c75a9a62e5610ff5ebf6ee9674532
+target: esp32
+version: 1.0.0

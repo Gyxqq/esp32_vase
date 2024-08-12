@@ -50,7 +50,9 @@
         "adc_types.h": "c",
         "mesh.h": "c",
         "i2s.h": "c",
-        "i2s_common.h": "c"
+        "i2s_common.h": "c",
+        "math.h": "c",
+        "config.h": "c"
     },
     "cmake.configureOnOpen": true
 }

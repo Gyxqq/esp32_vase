@@ -10,6 +10,7 @@
 #include "GUI_TASK/show_qrcode.c"
 #include "light.c"
 #include "water.c"
+#include "config.h"
 int command_handler(char *command);
 void base_mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
@@ -122,21 +123,28 @@ int command_handler(char *command)
         }
         gui++;
     }
+#ifdef USE_LIGHT
     else if (strcmp(command, "light-on") == 0)
     {
         ESP_EARLY_LOGI("MQTT", "LIGHT_ON");
+
         light_on();
     }
     else if (strcmp(command, "light-off") == 0)
     {
+
         ESP_EARLY_LOGI("MQTT", "LIGHT-OFF");
         light_off();
     }
+#endif
+#ifdef USE_WATER
+
     else if (strcmp("water", command) == 0)
     {
         ESP_EARLY_LOGI("MQTT", "WATER");
         xTaskCreate(water_on, "water_on", 2048, NULL, 10, NULL);
     }
+#endif
 
     return 0;
 }
