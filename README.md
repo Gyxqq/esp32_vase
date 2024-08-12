@@ -4,6 +4,8 @@ LVGL 组件包在release中下载
 
 [LVGL download](https://github.com/Gyxqq/esp32_vase/releases/tag/lvgl-components)
 
+
+
 ```
 esp32_vase
 ├─ .gitignore
@@ -13,11 +15,14 @@ esp32_vase
 ├─ CMakeLists.txt
 ├─ img_conv.py
 ├─ io.csv
+├─ LICENSE.md
 ├─ light_sensor.py
 ├─ light_sensor_list.c
+├─ log
 ├─ log.txt
 ├─ main
 │  ├─ CMakeLists.txt
+│  ├─ config.h
 │  ├─ esp32_vase.c
 │  ├─ esp_lcd_panel_st7735.c
 │  ├─ GUI_TASK
@@ -27,11 +32,13 @@ esp32_vase
 │  ├─ init_ble.c
 │  ├─ init_mesh.c
 │  ├─ init_wifi.c
+│  ├─ light.c
 │  ├─ light_sensor_list.c
 │  ├─ mqttcl.c
 │  ├─ sensor.c
 │  ├─ speech_recognition.c
 │  ├─ static_value.c
+│  ├─ water.c
 │  └─ yahei_16.c
 ├─ partitions.csv
 ├─ pytest_hello_world.py

@@ -152,7 +152,7 @@ void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts
         gatts_char_inst[0].property = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;
         gatts_char_inst[0].char_handle = 0;
         gatts_char_inst[0].control.auto_rsp = ESP_GATT_AUTO_RSP;
-        uint8_t char_value[] = "Hello World!23452345";
+        uint8_t char_value[] = "f329d3fb120675fb60d493efb670-62683ebdb10cdea359d1a32f7e0d1234123412341234";
         gatts_char_inst[0].value.attr_len = sizeof(char_value);
         gatts_char_inst[0].value.attr_max_len = 100;
         gatts_char_inst[0].value.attr_value = char_value;
@@ -173,7 +173,7 @@ void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts
         gatts_char_inst[1].property = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;
         gatts_char_inst[1].char_handle = 1;
         gatts_char_inst[1].control.auto_rsp = ESP_GATT_AUTO_RSP;
-        uint8_t char_value_1[] = "Hello World!23452345";
+        uint8_t char_value_1[] = "f329d3fb120675fb60d493efb670-62683ebdb10cdea359d1a32f7e0d1234123412341234";
         gatts_char_inst[1].value.attr_len = sizeof(char_value_1);
         gatts_char_inst[1].value.attr_max_len = 100;
         gatts_char_inst[1].value.attr_value = char_value_1;

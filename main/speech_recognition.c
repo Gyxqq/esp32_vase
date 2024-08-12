@@ -7,9 +7,9 @@ int init_i2s()
 {
     i2s_config_t i2s_cfg = {
         .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX, // 设置i2s工作模式，根据需求设置
-        .sample_rate = 115200,                               // 设置I2S 采样率，根据音频确定采样率
-        .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,        // 设置采样位数
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,        // 设置I2S 通道格式（分离左右声道）
+        .sample_rate = 8000,                               // 设置I2S 采样率，根据音频确定采样率
+        .bits_per_sample = I2S_BITS_PER_SAMPLE_8BIT,        // 设置采样位数
+        .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,        // 设置I2S 通道格式（分离左右声道）
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,   // 设置I2S 通讯格式
         .tx_desc_auto_clear = true,                          // I2S 自动清除tx描述符
 #if SOC_I2S_SUPPORTS_TDM
@@ -33,8 +33,9 @@ int init_i2s()
     }
 
     i2s_pin_config_t i2s_pin_cfg = {
-        .mck_io_num = GPIO_NUM_3,
-        .bck_io_num = GPIO_NUM_21,
+        // .mck_io_num = GPIO_NUM_3,
+        // .bck_io_num = GPIO_NUM_21,
+        .bck_io_num = GPIO_NUM_3,
         .ws_io_num = GPIO_NUM_17,
         // .data_out_num =GPIO_NUM_3,
         .data_in_num = GPIO_NUM_2};
@@ -54,11 +55,7 @@ void i2s_read_task(void *arg)
     while (1)
     {
         i2s_read(0, data, 1024 * sizeof(int16_t), &bytes_read, portMAX_DELAY);
-        for (int i = 0; i < 1024; i++)
-        {
-            ESP_EARLY_LOGI("I2S", "%d ", data[i]);
-        }
-        ESP_EARLY_LOGI("I2S", "\n");
+        // ESP_EARLY_LOGI("I2S", "read 1024");
     }
     free(data);
 }

@@ -97,6 +97,7 @@ void app_main(void)
         printf("wifi not connected\n");
         show_qrcode();
         init_ble();
+        // esp_mesh_stop();
         while (true)
         {
             vTaskDelay(pdMS_TO_TICKS(1000));
