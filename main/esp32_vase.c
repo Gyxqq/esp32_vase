@@ -125,7 +125,6 @@ void app_main(void)
         ESP_EARLY_LOGE("main", "weather screen init failed");
     }
 
-
 #ifdef USE_LIGHT
     init_light_gpio();
 #endif
@@ -138,6 +137,12 @@ void app_main(void)
     xTaskCreate(i2s_read_task, "speech_recognition_task", 8192, NULL, 10, NULL);
     ESP_EARLY_LOGI("main", "create i2s task success");
 #endif
+#ifdef USE_SPEECH_RECOGNITION_SR
+    ESP_EARLY_LOGI("main", "init speech recognition");
+    init_model();
+    ESP_EARLY_LOGI("main", "init model success");
+#endif
+
     gui_interupt_init();
     int_fast64_t counter = 0;
     while (1) // 存放一些定时任务

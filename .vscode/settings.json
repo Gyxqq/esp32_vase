@@ -52,7 +52,14 @@
         "i2s.h": "c",
         "i2s_common.h": "c",
         "math.h": "c",
-        "config.h": "c"
+        "config.h": "c",
+        "esp_mn_models.h": "c",
+        "esp_mn_iface.h": "c",
+        "esp_wn_models.h": "c",
+        "esp_process_sdkconfig.h": "c",
+        "functional": "c",
+        "variant": "c"
     },
-    "cmake.configureOnOpen": true
+    "cmake.configureOnOpen": true,
+    "C_Cpp.errorSquiggles": "enabled"
 }
