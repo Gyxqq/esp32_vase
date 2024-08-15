@@ -60,7 +60,8 @@
         "functional": "c",
         "variant": "c",
         "esp_afe_sr_iface.h": "c",
-        "esp_afe_config.h": "c"
+        "esp_afe_config.h": "c",
+        "esp_netif.h": "c"
     },
     "cmake.configureOnOpen": true,
     "C_Cpp.errorSquiggles": "enabled"

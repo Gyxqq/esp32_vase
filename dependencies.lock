@@ -1,15 +1,40 @@
 dependencies:
+  espressif/cmake_utilities:
+    component_hash: 351350613ceafba240b761b4ea991e0f231ac7a9f59a9ee901f751bddc0bb18f
+    source:
+      type: service
+    version: 0.5.3
   espressif/esp-dsp:
     component_hash: null
     source:
       path: F:\projects\esp32_vase\components\espressif__esp-dsp
       type: local
     version: 1.5.1
+  espressif/esp_modem:
+    component_hash: e48da33fee082dd9d9a97a354a228057e07a14ac108766b40ad84e018205410a
+    source:
+      type: service
+    version: 1.1.0
+  espressif/iot_bridge:
+    component_hash: 852e0d8d26b6c0f985c2196df5f668f014bf32413b03d3ec90ab163a988762e9
+    source:
+      type: service
+    version: 0.11.8
+  espressif/mesh_lite:
+    component_hash: 2adb6346dbaf5354699770a470b0e4fc1de40c3e0bdc33cfc4e313a2478cdae0
+    source:
+      type: service
+    version: 1.0.0
+  espressif/qrcode:
+    component_hash: 3b493771bc5d6ad30cbf87c25bf784aada8a08c941504355b55d6b75518ed7bc
+    source:
+      type: service
+    version: 0.1.0~2
   idf:
     component_hash: null
     source:
       type: idf
     version: 5.2.2
-manifest_hash: e1404512fe98d42ff51b682736049aa5377c75a9a62e5610ff5ebf6ee9674532
+manifest_hash: 42578c7d5207356585952b731783c39b5ab28f1e0b482532f138bd13eb5aa2e7
 target: esp32
 version: 1.0.0

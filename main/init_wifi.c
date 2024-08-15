@@ -5,6 +5,9 @@
 #include "nvs_flash.h"
 #include "esp_netif.h"
 #include "lwip/ip_addr.h"
+char *ssid_;
+char *password_;
+static int wifi_connected = 0;
 void init_wifi(void)
 {
 
@@ -19,46 +22,61 @@ void init_wifi(void)
     }
     ESP_ERROR_CHECK(ret0);
     nvs_handle nvs;
-    ret0=nvs_open("storage", NVS_READWRITE, &nvs);
-    if(ret0==ESP_OK){
+    ret0 = nvs_open("storage", NVS_READWRITE, &nvs);
+    if (ret0 == ESP_OK)
+    {
         printf("nvs open success\n");
-    }else{
+    }
+    else
+    {
         printf("nvs open failed\n");
     }
     size_t len = 0;
-    ret0=nvs_get_str(nvs, "ssid", NULL, &len);
-    if(ret0==ESP_OK){
-        printf("ssid len: %d\n",len);
-    }else{
+    ret0 = nvs_get_str(nvs, "ssid", NULL, &len);
+    if (ret0 == ESP_OK)
+    {
+        printf("ssid len: %d\n", len);
+    }
+    else
+    {
         printf("ssid len failed\n");
         return;
     }
     char *ssid0 = (char *)malloc(len);
-    ret0=nvs_get_str(nvs, "ssid", ssid0, &len);
-    if(ret0==ESP_OK){
-        printf("ssid: %s\n",ssid0);
-    }else{
+    ret0 = nvs_get_str(nvs, "ssid", ssid0, &len);
+    if (ret0 == ESP_OK)
+    {
+        printf("ssid: %s\n", ssid0);
+    }
+    else
+    {
         printf("ssid failed\n");
         return;
     }
-    ret0=nvs_get_str(nvs, "password", NULL, &len);
-    if(ret0==ESP_OK){
-        printf("password len: %d\n",len);
-    }else{
+    ret0 = nvs_get_str(nvs, "password", NULL, &len);
+    if (ret0 == ESP_OK)
+    {
+        printf("password len: %d\n", len);
+    }
+    else
+    {
         printf("password len failed\n");
         return;
     }
     char *password0 = (char *)malloc(len);
-    ret0=nvs_get_str(nvs, "password", password0, &len);
-    if(ret0==ESP_OK){
-        printf("password: %s\n",password0
-        );
-    }else{
+    ret0 = nvs_get_str(nvs, "password", password0, &len);
+    if (ret0 == ESP_OK)
+    {
+        printf("password: %s\n", password0);
+    }
+    else
+    {
         printf("password failed\n");
         return;
     }
     nvs_close(nvs);
-
+    ssid_ = ssid0;
+    password_ = password0;
 
     esp_netif_init();
     esp_event_loop_create_default();
@@ -81,7 +99,7 @@ void init_wifi(void)
 
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid ="",
+            .ssid = "",
             .password = "",
             .threshold.authmode = WIFI_AUTH_WPA2_PSK,
             .pmf_cfg = {
@@ -117,4 +135,30 @@ void init_wifi(void)
         printf("Error: %s\n", esp_err_to_name(err));
     }
 }
+// int wifi_swich()
+// {
+//     esp_wifi_stop();
+//     wifi_config_t wifi_config = {
+//         .sta = {
+//             .ssid = "",
+//             .password = "",
+//             .threshold.authmode = WIFI_AUTH_WPA2_PSK,
+//             .pmf_cfg = {
+//                 .capable = true,
+//                 .required = false,
+//             },
+//         },
+//     };
+//     if (wifi_connected == 0)
+//     {
+//         strcpy((char *)wifi_config.sta.ssid, "TP-LINK_2.4GHz_1A4A");
+//         strcpy((char *)wifi_config.sta.password, "12345678");
+//         wifi_connected = 1;
+//     }
+//     strcpy((char *)wifi_config.sta.ssid, ssid_);
+//     strcpy((char *)wifi_config.sta.password, password_);
+
+//     esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config);
+//     esp_wifi_start();
+// }
 #endif

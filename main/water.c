@@ -24,10 +24,9 @@ void init_water()
 void water_on()
 {
     ESP_ERROR_CHECK(gpio_set_level(GPIO_NUM_25, 1));
-    ESP_ERROR_CHECK(gpio_set_level(GPIO_NUM_22, 0));
+    // ESP_ERROR_CHECK(gpio_set_level(GPIO_NUM_22, 0));
     vTaskDelay(2000 / portTICK_PERIOD_MS);
-    ESP_ERROR_CHECK(gpio_set_level(GPIO_NUM_25, 0));
-    ESP_ERROR_CHECK(gpio_set_level(GPIO_NUM_22, 0));
-    return ;
+    ESP_ERROR_CHECK(gpio_set_level(GPIO_NUM_25,0)); 
+    // ESP_ERROR_CHECK(gpio_set_level(GPIO_NUM_22, 0));
 }
 #endif

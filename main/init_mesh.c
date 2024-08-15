@@ -10,6 +10,8 @@ static const uint8_t MESH_ID[6] = {0x77, 0x77, 0x77, 0x77, 0x77, 0x76};
 #define CONFIG_MESH_ROUTER_PASSWD "12345678"
 #define CONFIG_MESH_AP_PASSWD "12345678"
 #define CONFIG_MESH_AP_CONNECTIONS 4
+#define MESH_TAG "MESH"
+esp_netif_t *sta_netif;
 static void ip_event_handler1(void *arg, esp_event_base_t event_base,
                               int32_t event_id, void *event_data)
 {
@@ -27,6 +29,64 @@ static void ip_event_handler1(void *arg, esp_event_base_t event_base,
     }
 
     return;
+}
+void mesh_event_handler(void *arg, esp_event_base_t event_base,
+                        int32_t event_id, void *event_data)
+{
+    mesh_addr_t id = {
+        0,
+    };
+    static uint16_t last_layer = 0;
+    uint16_t mesh_layer = 0;
+    mesh_addr_t mesh_parent_addr;
+    static bool is_mesh_connected = false;
+    switch (event_id)
+    {
+    case MESH_EVENT_NO_PARENT_FOUND:
+    {
+        mesh_event_no_parent_found_t *no_parent = (mesh_event_no_parent_found_t *)event_data;
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_NO_PARENT_FOUND>scan times:%d",
+                 no_parent->scan_times);
+    }
+    /* TODO handler for the failure */
+    break;
+    /* 已连接到父节点事件 */
+    case MESH_EVENT_PARENT_CONNECTED:
+    {
+        mesh_event_connected_t *connected = (mesh_event_connected_t *)event_data;
+        esp_mesh_get_id(&id);
+        mesh_layer = connected->self_layer;
+        memcpy(&mesh_parent_addr.addr, connected->connected.bssid, 6);
+        
+        last_layer = mesh_layer;
+        /* 已连接到父节点状态指示 */
+        // mesh_connected_indicator(mesh_layer);
+        is_mesh_connected = true;
+        /* 判断该设备是否为Mesh网络中的根节点 */
+        // if (esp_mesh_is_root())
+        // {
+            /* 开启DHCP客户端获取IP */
+        esp_netif_dhcpc_start(sta_netif);
+        // }
+        
+    }
+    break;
+    /* 与父节点断开连接事件 */
+    case MESH_EVENT_PARENT_DISCONNECTED:
+    {
+        mesh_event_disconnected_t *disconnected = (mesh_event_disconnected_t *)event_data;
+        ESP_LOGI(MESH_TAG,
+                 "<MESH_EVENT_PARENT_DISCONNECTED>reason:%d",
+                 disconnected->reason);
+        is_mesh_connected = false;
+        // mesh_disconnected_indicator();
+        mesh_layer = esp_mesh_get_layer();
+    }
+    break;
+
+    default:
+        break;
+    }
 }
 int init_mesh()
 {
@@ -99,10 +159,11 @@ int init_mesh()
 
     /* 事件初始化 */
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-
+    
     /* Wi-Fi 初始化 */
-    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
-    // ESP_ERROR_CHECK(esp_netif_create_default_wifi_mesh_netifs(&sta_netif, NULL));
+    // sta_netif = esp_netif_create_default_wifi_sta();
+    ESP_ERROR_CHECK(esp_netif_create_default_wifi_mesh_netifs(&sta_netif, NULL));
+    // esp_netif_create_default_wifi_
     esp_netif_set_hostname(sta_netif, "esp32");
     esp_netif_dns_info_t dns_info;
     IP4_ADDR(&dns_info.ip.u_addr.ip4, 8, 8, 8, 8); // Google 的公共 DNS 服务器 8.8.8.8
@@ -113,6 +174,8 @@ int init_mesh()
     ESP_ERROR_CHECK(esp_wifi_init(&config));
     /* 注册 IP 事件处理程序 */
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &ip_event_handler1, NULL));
+    // 注册 mesh 事件处理程序
+    ESP_ERROR_CHECK(esp_event_handler_register(MESH_EVENT, ESP_EVENT_ANY_ID, &mesh_event_handler, NULL));
     // ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
     ESP_ERROR_CHECK(esp_wifi_start());
     /* Mesh 初始化 */

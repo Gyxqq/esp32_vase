@@ -142,7 +142,8 @@ int command_handler(char *command)
     else if (strcmp("water", command) == 0)
     {
         ESP_EARLY_LOGI("MQTT", "WATER");
-        xTaskCreate(water_on, "water_on", 2048, NULL, 10, NULL);
+        // xTaskCreate(water_on, "water_on", 2048, NULL, 10, NULL);
+        water_on();
     }
 #endif
 

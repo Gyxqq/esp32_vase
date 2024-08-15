@@ -38,6 +38,7 @@
 #include "init_mesh.c"
 #include "config.h"
 #include "speech_recognition.c"
+#include "init_mesh_lite.c"
 int load_uuid();
 int read_temp_humi_lux_uploader();
 int check_wifi_and_set_icon();
@@ -65,9 +66,14 @@ void app_main(void)
     esp_log_level_set("*", ESP_LOG_DEBUG);
 #ifdef USE_MESH
     init_mesh();
-#else
+#endif
+#ifdef USE_MESH_LITE
+    init_mesh_lite();
+#endif
+#ifdef USE_WIFI
     init_wifi();
 #endif
+    ESP_EARLY_LOGI("main", "init wifi success");
     // init_ble();
     // vTaskDelay(pdMS_TO_TICKS(20000));
     lv_init();
@@ -103,6 +109,10 @@ void app_main(void)
             vTaskDelay(pdMS_TO_TICKS(1000));
             wifi_ap_record_t ap_info;
             esp_err_t ret = esp_wifi_sta_get_ap_info(&ap_info);
+#ifdef USE_MESH_LITE
+            // wifi_swich();
+#endif
+
             if (ret == ESP_OK)
             {
                 deinit_ble();
@@ -162,7 +172,7 @@ void app_main(void)
         }
         if (counter % 20 == 0)
         {
-#ifdef USE_SPEECH_RECOGNITION
+#ifdef USE_TEMP_HUMI
             read_temp_humi_lux_uploader();
 #endif
         }

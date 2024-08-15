@@ -8,6 +8,7 @@
 #include "esp_http_client.h"
 #include "../http_func.c"
 #include "../yahei_16.c"
+#include "esp_mesh.h"
 LV_FONT_DECLARE(yahei_16)
 int screen_manager(int screen_index, int opt);
 int screen_sensor_init();
@@ -15,7 +16,7 @@ int screen_sensor_update(float temp, float humi, float lux);
 int screen_sensor_destroy();
 int screen_weather_init();
 int screen_weather_destroy();
-lv_obj_t *qrscr=NULL;
+lv_obj_t *qrscr = NULL;
 uint8_t *img_buf;
 struct screen_sensor
 {
@@ -23,7 +24,7 @@ struct screen_sensor
     lv_obj_t *temp_label;
     lv_obj_t *humi_label;
     lv_obj_t *wifi_label;
-    lv_obj_t * lux_label;
+    lv_obj_t *lux_label;
 
 } screen_sensor;
 struct screen_weather
@@ -89,7 +90,7 @@ void initGuiTask()
     }
 }
 void init_dsp()
-{ 
+{
 
     ;
 }
@@ -329,7 +330,7 @@ int screen_weather_init()
         weather.wifi_label = lv_label_create(weather.weather_screen, NULL);
         lv_label_set_text(weather.wifi_label, LV_SYMBOL_WIFI);
         lv_obj_set_style_local_text_font(weather.wifi_label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_normal());
-        lv_obj_align(weather.wifi_label, weather.weather_screen, LV_ALIGN_IN_TOP_RIGHT, -10,5);
+        lv_obj_align(weather.wifi_label, weather.weather_screen, LV_ALIGN_IN_TOP_RIGHT, -10, 5);
 
         xSemaphoreGive(xGuiSemaphore);
     }
@@ -392,7 +393,14 @@ int screen_weather_init()
 
         weather.mesh = lv_label_create(weather.weather_screen, NULL);
         lv_obj_set_style_local_text_font(weather.mesh, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_title());
-        lv_label_set_text(weather.mesh, "MESH:ROOT");
+        if (esp_mesh_is_root())
+        {
+            lv_label_set_text(weather.mesh, "MESH:ROOT");
+        }
+        else
+        {
+            lv_label_set_text(weather.mesh, "MESH:LEAF");
+        }
         lv_obj_align(weather.mesh, NULL, LV_ALIGN_IN_TOP_LEFT, 10, 90);
     }
     else
