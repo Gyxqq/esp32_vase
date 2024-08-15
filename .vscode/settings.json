@@ -58,7 +58,9 @@
         "esp_wn_models.h": "c",
         "esp_process_sdkconfig.h": "c",
         "functional": "c",
-        "variant": "c"
+        "variant": "c",
+        "esp_afe_sr_iface.h": "c",
+        "esp_afe_config.h": "c"
     },
     "cmake.configureOnOpen": true,
     "C_Cpp.errorSquiggles": "enabled"

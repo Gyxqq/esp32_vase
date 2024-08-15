@@ -139,6 +139,7 @@ void app_main(void)
 #endif
 #ifdef USE_SPEECH_RECOGNITION_SR
     ESP_EARLY_LOGI("main", "init speech recognition");
+    init_i2s();
     init_model();
     ESP_EARLY_LOGI("main", "init model success");
 #endif

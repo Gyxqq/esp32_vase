@@ -12,6 +12,8 @@
 #include "esp_afe_sr_models.h"
 #include "esp_mn_iface.h"
 #include "esp_process_sdkconfig.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 // #include "esp_board_init.h"
 // #include "speech_commands_action.h"
 #include "model_path.h"
@@ -87,14 +89,17 @@ void feed_Task(void *arg)
     int feed_channel = 1;
     assert(nch <= feed_channel);
     int16_t *i2s_buff = malloc(audio_chunksize * sizeof(int16_t) * feed_channel);
+    ESP_EARLY_LOGI("SR", "I2S BUFF MALLOC %d", audio_chunksize * sizeof(int16_t) * feed_channel);
     assert(i2s_buff);
-
+    size_t bytes_read;
     while (task_flag)
     {
         // esp_get_feed_data(false, i2s_buff, audio_chunksize * sizeof(int16_t) * feed_channel);
-        i2s_read(0, i2s_buff, audio_chunksize * sizeof(int16_t) * feed_channel, NULL, portMAX_DELAY);
+        i2s_read(0, i2s_buff, audio_chunksize * sizeof(int16_t) * feed_channel, &bytes_read, portMAX_DELAY);
         ESP_EARLY_LOGI("SR", "I2S READ DATA");
+        ESP_EARLY_LOGI("SR", "FREE HEAP SIZE %d", xPortGetFreeHeapSize());
         afe_handle->feed(afe_data, i2s_buff);
+        ESP_EARLY_LOGI("SR", "AFE FEED DATA");
     }
     if (i2s_buff)
     {
@@ -110,11 +115,10 @@ void detect_Task(void *arg)
     char *mn_name = esp_srmodel_filter(models, ESP_MN_PREFIX, ESP_MN_CHINESE);
     printf("multinet:%s\n", mn_name);
     esp_mn_iface_t *multinet = esp_mn_handle_from_name(mn_name);
-    model_iface_data_t *model_data = multinet->create(mn_name, 6000);
+    model_iface_data_t *model_data = multinet->create(mn_name, 2000);
     esp_mn_commands_update_from_sdkconfig(multinet, model_data); // Add speech commands from sdkconfig
     int mu_chunksize = multinet->get_samp_chunksize(model_data);
     assert(mu_chunksize == afe_chunksize);
-
     // print active speech commands
     multinet->print_active_speech_commands(model_data);
     printf("------------detect start------------\n");
@@ -171,6 +175,7 @@ void detect_Task(void *arg)
 
 void init_model()
 {
+    ESP_EARLY_LOGI("SR", "FREE HEAP SIZE1 %d", xPortGetFreeHeapSize());
     models = esp_srmodel_init("model");
     if (models == NULL)
     {
@@ -185,20 +190,26 @@ void init_model()
         return;
     }
     ESP_LOGI("SR", "AFE init success");
-
+    ESP_EARLY_LOGI("SR", "FREE HEAP SIZE2 %d", xPortGetFreeHeapSize());
     afe_config_t config = AFE_CONFIG_DEFAULT();
     config.pcm_config.sample_rate = 16000;
-    config.pcm_config.mic_num = 1;
+    config.pcm_config.mic_num = 0;
+    config.memory_alloc_mode = AFE_MEMORY_ALLOC_MORE_INTERNAL,
     config.pcm_config.ref_num = 1;
-    config.pcm_config.total_ch_num = 2;
+    config.pcm_config.total_ch_num = 1;
     config.wakenet_mode = DET_MODE_90;
     config.afe_ns_mode = NS_MODE_SSP;
+    config.debug_init = true;
     config.wakenet_model_name = esp_srmodel_filter(models, ESP_WN_PREFIX, NULL);
-    ;
+    config.afe_ringbuf_size = 25;
     afe_data = afe_handle->create_from_config(&config);
+    ESP_EARLY_LOGI("SR", "FREE HEAP SIZE3 %d", xPortGetFreeHeapSize());
+    ESP_EARLY_LOGI("SR", "AFE create success");
     task_flag = 1;
-    xTaskCreatePinnedToCore(&detect_Task, "detect", 16 * 1024, (void *)afe_data, 5, NULL, 1);
-    xTaskCreatePinnedToCore(&feed_Task, "feed", 16 * 1024, (void *)afe_data, 5, NULL, 0);
+    assert(afe_data);
+    // assert(afe_handle->init(afe_data) == ESP_OK);
+    xTaskCreatePinnedToCore(&detect_Task, "detect", 4 * 1024, (void *)afe_data, 5, NULL, 1);
+    xTaskCreatePinnedToCore(&feed_Task, "feed", 4* 1024, (void *)afe_data, 5, NULL, 0);
 }
 
 #endif
