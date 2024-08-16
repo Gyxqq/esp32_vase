@@ -131,7 +131,7 @@ void show_qrcode()
     char macStr[22];
 
     sprintf(macStr, "MAC %02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    qrcode_initText(qrcode, qrcodeData, 10, ECC_HIGH, macStr);
+    qrcode_initText(qrcode, qrcodeData, 5, ECC_LOW, macStr);
     // 按像素绘制二维码
     assert(qrcode != NULL);
     printf("size: %d\n", qrcode->size);
@@ -139,21 +139,21 @@ void show_qrcode()
     uint8_t color_depth = lv_img_cf_get_px_size(LV_IMG_CF_TRUE_COLOR);
     printf("color_depth: %d\n", color_depth);
     // 创建缓冲区
-    lv_color_t *buf = heap_caps_malloc(qrcode->size * qrcode->size * color_depth / 8, (1 << 3));
+    lv_color_t *buf = heap_caps_malloc(qrcode->size * qrcode->size * color_depth * 4 / 8, (1 << 3));
     assert(buf != NULL);
     // 8位到16位rgb565
     img_buf = buf;
-    for (int x = 0; x < qrcode->size; x++)
+    for (int i = 0; i < qrcode->size; i++)
     {
-        for (int y = 0; y < qrcode->size; y++)
+        for (int j = 0; j < qrcode->size; j++)
         {
-            if (qrcode_getModule(qrcode, x, y))
+            lv_color_t color = qrcode_getModule(qrcode, i, j) ? LV_COLOR_BLACK : LV_COLOR_WHITE;
+            for (int dx = 0; dx < 2; dx++)
             {
-                buf[x * qrcode->size + y] = LV_COLOR_BLACK;
-            }
-            else
-            {
-                buf[x * qrcode->size + y] = LV_COLOR_WHITE;
+                for (int dy = 0; dy < 2; dy++)
+                {
+                    buf[(i * 2 + dx) * qrcode->size * 2 + (j * 2 + dy)] = color;
+                }
             }
         }
     }
@@ -163,7 +163,7 @@ void show_qrcode()
     // 设置画布
     // 设置画布位置
 
-    lv_canvas_set_buffer(canvas, buf, qrcode->size, qrcode->size, LV_IMG_CF_TRUE_COLOR);
+    lv_canvas_set_buffer(canvas, buf, qrcode->size*2, qrcode->size*2, LV_IMG_CF_TRUE_COLOR);
     lv_obj_align(canvas, NULL, LV_ALIGN_CENTER, 0, 20);
     // 释放缓冲区
     free(qrcode);
