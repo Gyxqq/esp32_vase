@@ -1,6 +1,6 @@
 ## IDF Component Manager Manifest File
 dependencies:
-  espressif/mesh_lite: "^1.0.0"
+  espressif/mesh_lite: "=*"
   ## Required IDF version
   idf:
     version: ">=4.1.0"

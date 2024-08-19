@@ -393,7 +393,7 @@ int screen_weather_init()
 
         weather.mesh = lv_label_create(weather.weather_screen, NULL);
         lv_obj_set_style_local_text_font(weather.mesh, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, lv_theme_get_font_title());
-        if (esp_mesh_is_root())
+        if (false)
         {
             lv_label_set_text(weather.mesh, "MESH:ROOT");
         }

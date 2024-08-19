@@ -1,9 +1,19 @@
 # ESP32智能物联网花瓶
-环境配置 idf ESP-IDF v5.2.1-dirty 
+环境配置 idf ESP-IDF v5.2.2
 LVGL 组件包在release中下载 
 
 [LVGL download](https://github.com/Gyxqq/esp32_vase/releases/tag/lvgl-components)
-
+## 涉及部分
+- LVGL 图形化框架
+- IIC 通信
+- MQTT 通信
+- BLE 通信
+- 语音识别
+- MESH组网
+- 线性插值
+- ADC 读取
+- 二维码生成
+- HTTP 通信
 
 
 ```

@@ -14,8 +14,9 @@
 #include "esp_bridge.h"
 #include "esp_mesh_lite.h"
 #include "init_wifi.c"
-#define CONFIG_BRIDGE_SOFTAP_SSID "ESP32_mesh"
-#define CONFIG_BRIDGE_SOFTAP_PASSWORD "12345678"
+#include <esp_netif_types.h>
+#define CONFIG_BRIDGE_SOFTAP_SSID "ESP32"
+#define CONFIG_BRIDGE_SOFTAP_PASSWORD "123456789"
 #define PAYLOAD_LEN (1456)
 int count_mesh = 0;
 static void print_system_info_timercb(TimerHandle_t timer)
@@ -122,12 +123,14 @@ static void wifi_init(void)
     wifi_config.sta.ssid[sizeof(wifi_config.sta.ssid) - 1] = '\0';
     strncpy((char *)wifi_config.sta.password, password0, sizeof(wifi_config.sta.password) - 1);
     wifi_config.sta.password[sizeof(wifi_config.sta.password) - 1] = '\0';
-
     esp_bridge_wifi_set_config(WIFI_IF_STA, &wifi_config);
 
+    // wifi_config.ap.channel = 7;
     // Softap
     snprintf((char *)wifi_config.ap.ssid, sizeof(wifi_config.ap.ssid), "%s", CONFIG_BRIDGE_SOFTAP_SSID);
     strlcpy((char *)wifi_config.ap.password, CONFIG_BRIDGE_SOFTAP_PASSWORD, sizeof(wifi_config.ap.password));
+
+    ESP_EARLY_LOGW("wifi", "ssid: %s, password: %s", wifi_config.ap.ssid, wifi_config.ap.password);
     esp_bridge_wifi_set_config(WIFI_IF_AP, &wifi_config);
 }
 
@@ -155,15 +158,10 @@ int init_mesh_lite()
     esp_bridge_create_all_netif();
     wifi_init();
     esp_mesh_lite_config_t mesh_lite_config = ESP_MESH_LITE_DEFAULT_INIT();
-    mesh_lite_config.max_connect_number = 30;
-    mesh_lite_config.max_node_number = 30;
-    mesh_lite_config.max_router_number = 2;
-    mesh_lite_config.softap_ssid = "ESP32_mesh";
-    mesh_lite_config.softap_password = "12345678";
-    mesh_lite_config.join_mesh_ignore_router_status = true;
-    mesh_lite_config.join_mesh_without_configured_wifi = true;
+
     esp_mesh_lite_init(&mesh_lite_config);
     app_wifi_set_softap_info();
+    
     esp_mesh_lite_start();
     ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &ip_event_sta_got_ip_handler, NULL, NULL));
     TimerHandle_t timer = xTimerCreate("print_system_info", 10000 / portTICK_PERIOD_MS,
@@ -204,7 +202,7 @@ int wifi_swich()
         else
         {
             printf("ssid len failed\n");
-            return -1 ;
+            return -1;
         }
         char *ssid0 = (char *)malloc(len);
         ret0 = nvs_get_str(nvs, "ssid", ssid0, &len);
@@ -215,7 +213,7 @@ int wifi_swich()
         else
         {
             printf("ssid failed\n");
-            return -1 ;
+            return -1;
         }
         size_t len1 = 0;
         ret0 = nvs_get_str(nvs, "password", NULL, &len1);
@@ -226,7 +224,7 @@ int wifi_swich()
         else
         {
             printf("password len failed\n");
-            return -1 ;
+            return -1;
         }
         char *password0 = (char *)malloc(len1);
         ret0 = nvs_get_str(nvs, "password", password0, &len1);
@@ -237,11 +235,11 @@ int wifi_swich()
         else
         {
             printf("password failed\n");
-            return -1 ;
+            return -1;
         }
         nvs_close(nvs);
 
-        strncpy((char *)config.ssid, ssid0,len);
+        strncpy((char *)config.ssid, ssid0, len);
         strncpy((char *)config.password, password0, len1);
     }
     else

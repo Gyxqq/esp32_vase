@@ -67,6 +67,7 @@ void app_main(void)
 #ifdef USE_MESH
     init_mesh();
 #endif
+
 #ifdef USE_MESH_LITE
     init_mesh_lite();
 #endif
@@ -95,15 +96,17 @@ void app_main(void)
     // show_qrcode();
     // vTaskDelay(pdMS_TO_TICKS(5000));
     // 检查wifi连接状态
+
     wifi_ap_record_t ap_info;
     esp_err_t ret = esp_wifi_sta_get_ap_info(&ap_info);
-    if (ret != ESP_OK)
+    if (true)
     {
 
         printf("wifi not connected\n");
         show_qrcode();
         init_ble();
         // esp_mesh_stop();
+        vTaskDelay(pdMS_TO_TICKS(10000));
         while (true)
         {
             vTaskDelay(pdMS_TO_TICKS(1000));
@@ -120,7 +123,6 @@ void app_main(void)
                 free(img_buf);
                 vTaskDelay(pdMS_TO_TICKS(2000));
                 // esp_mesh_stop();
-
                 break;
             }
         }
